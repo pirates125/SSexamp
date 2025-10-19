@@ -1,0 +1,41 @@
+[
+    {
+        "domain": ".somposigorta.com.tr",
+        "httpOnly": true,
+        "name": "citrix_ns_id",
+        "path": "/",
+        "sameSite": "Lax",
+        "secure": false,
+        "value": "AAI7rT0LaDvfQT0AAAAAADvSxmt_88DX9tdbOwF_UbUdsohMyOMWInOjRoh_WAL3Ow==70kLaA==t5xYDXm817SDWsAa8v1EusxOE7k="
+    },
+    {
+        "domain": ".ejento.somposigorta.com.tr",
+        "expiry": 1758816349,
+        "httpOnly": false,
+        "name": "ppialog",
+        "path": "/",
+        "sameSite": "Lax",
+        "secure": false,
+        "value": "1"
+    },
+    {
+        "domain": ".somposigorta.com.tr",
+        "expiry": 1793374543,
+        "httpOnly": false,
+        "name": "_ga_GCXMH98TNJ",
+        "path": "/",
+        "sameSite": "Lax",
+        "secure": false,
+        "value": "GS2.1.s1758814396$o1$g1$t1758814543$j59$l0$h0"
+    },
+    {
+        "domain": ".somposigorta.com.tr",
+        "expiry": 1793374396,
+        "httpOnly": false,
+        "name": "_ga",
+        "path": "/",
+        "sameSite": "Lax",
+        "secure": false,
+        "value": "GA1.1.1292234569.1758814396"
+    }
+]

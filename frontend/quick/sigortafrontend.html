@@ -1,0 +1,1421 @@
+<!DOCTYPE html>
+<html lang="tr">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1" />
+    <title>EESİGORTA – Yönetim Paneli</title>
+
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+    <link
+      href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap"
+      rel="stylesheet"
+    />
+
+    <style>
+      :root {
+        --bg: #0f172a; /* header koyu */
+        --sidebar: #111827; /* sol menü koyu */
+        --card: #ffffff; /* kart zemin */
+        --muted: #64748b; /* metin gri */
+        --brand: #1d4ed8; /* mavi */
+        --brand-2: #06b6d4; /* camgöbeği */
+        --ok: #10b981; /* yeşil */
+        --warn: #f59e0b; /* sarı */
+        --err: #ef4444; /* kırmızı */
+        --ring: 0 10px 30px rgba(29, 78, 216, 0.18);
+        --ring-green: 0 10px 30px rgba(16, 185, 129, 0.16);
+        --ring-red: 0 10px 30px rgba(239, 68, 68, 0.16);
+        --grad: linear-gradient(135deg, #1d4ed8 0%, #06b6d4 100%);
+        --grad-soft: linear-gradient(135deg, #e0f2fe 0%, #ecfeff 100%);
+      }
+      * {
+        box-sizing: border-box;
+      }
+      html,
+      body {
+        height: 100%;
+      }
+      body {
+        margin: 0;
+        background: #f1f5f9;
+        color: #0f172a;
+        font-family: Inter, system-ui, -apple-system, segoe ui, Roboto, Arial,
+          sans-serif;
+      }
+
+      /* HEADER ------------------------------------------------- */
+      .header {
+        position: sticky;
+        top: 0;
+        z-index: 50;
+        display: flex;
+        align-items: center;
+        gap: 14px;
+        padding: 10px 18px;
+        background: var(--bg);
+        color: #e5e7eb;
+        box-shadow: 0 2px 0 rgba(15, 23, 42, 0.6);
+      }
+      .brand {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        cursor: pointer;
+        padding: 8px 10px;
+        border-radius: 12px;
+        background: linear-gradient(135deg, #0ea5e9 0%, #22d3ee 100%);
+        color: white;
+        font-weight: 800;
+        letter-spacing: 0.3px;
+        box-shadow: 0 8px 24px rgba(14, 165, 233, 0.25);
+      }
+      .brand svg {
+        width: 28px;
+        height: 28px;
+        filter: drop-shadow(0 6px 16px rgba(14, 165, 233, 0.35));
+      }
+      .header .search {
+        margin-left: 10px;
+        flex: 1;
+        position: relative;
+      }
+      .header .search input {
+        width: 100%;
+        height: 40px;
+        border-radius: 12px;
+        border: none;
+        padding: 0 44px 0 42px;
+        outline: none;
+        color: #0f172a;
+        background: #e5e7eb;
+      }
+      .header .search svg {
+        position: absolute;
+        left: 12px;
+        top: 9px;
+        opacity: 0.75;
+      }
+      .header .icons {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        margin-left: auto;
+      }
+      .avatar {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        background: #0b1220;
+        padding: 6px 10px;
+        border-radius: 999px;
+        border: 1px solid #1f2937;
+      }
+      .pill {
+        background: #0b1220;
+        border: 1px solid #1f2937;
+        color: #cbd5e1;
+        padding: 6px 10px;
+        border-radius: 12px;
+        font-size: 12px;
+      }
+
+      /* LAYOUT ------------------------------------------------- */
+      .layout {
+        display: flex;
+        min-height: calc(100vh - 60px);
+      }
+      .sidebar {
+        width: 260px;
+        background: var(--sidebar);
+        color: #d1d5db;
+        padding: 16px 12px 24px;
+      }
+      .menu {
+        display: flex;
+        flex-direction: column;
+        gap: 6px;
+        margin-top: 8px;
+      }
+      .menu a {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        color: #cbd5e1;
+        text-decoration: none;
+        padding: 10px 12px;
+        border-radius: 10px;
+        transition: 0.18s ease;
+        border: 1px solid transparent;
+      }
+      .menu a:hover {
+        background: #0b1220;
+        border-color: #1f2937;
+      }
+      .menu a.active {
+        background: linear-gradient(135deg, #0ea5e9 0%, #22c55e 100%);
+        color: #fff;
+      }
+      .menu svg {
+        opacity: 0.9;
+      }
+      .content {
+        flex: 1;
+        padding: 22px;
+      }
+
+      /* CARDS -------------------------------------------------- */
+      .grid {
+        display: grid;
+        grid-template-columns: repeat(12, 1fr);
+        gap: 16px;
+      }
+      .card {
+        background: var(--card);
+        border-radius: 16px;
+        padding: 16px 16px 14px;
+        box-shadow: var(--ring);
+        border: 1px solid #e2e8f0;
+      }
+      .kpi {
+        display: flex;
+        gap: 12px;
+        align-items: center;
+      }
+      .kpi .mini {
+        width: 72px;
+        height: 72px;
+        border-radius: 14px;
+        background: var(--grad-soft);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+      }
+      .kpi h3 {
+        margin: 0;
+        font-size: 14px;
+        color: #334155;
+      }
+      .kpi .val {
+        font-weight: 800;
+        font-size: 26px;
+      }
+      .chip {
+        font-size: 12px;
+        padding: 4px 8px;
+        border-radius: 999px;
+      }
+      .chip.blue {
+        background: #dbeafe;
+        color: #1d4ed8;
+      }
+      .chip.green {
+        background: #dcfce7;
+        color: #16a34a;
+      }
+      .chip.red {
+        background: #fee2e2;
+        color: #ef4444;
+      }
+
+      .quick-tiles {
+        display: grid;
+        grid-template-columns: repeat(8, 1fr);
+        gap: 12px;
+      }
+      .tile {
+        background: #fff;
+        border: 1px solid #e5e7eb;
+        border-radius: 16px;
+        padding: 14px;
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        transition: 0.2s;
+        cursor: pointer;
+        box-shadow: 0 2px 10px rgba(2, 8, 23, 0.04);
+      }
+      .tile:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 14px 30px rgba(2, 8, 23, 0.12);
+      }
+      .tile .ico {
+        width: 40px;
+        height: 40px;
+        border-radius: 12px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+      }
+      .tile span {
+        font-weight: 700;
+      }
+      .ico.blue {
+        background: #e0f2fe;
+        color: #0284c7;
+      }
+      .ico.purple {
+        background: #ede9fe;
+        color: #7c3aed;
+      }
+      .ico.green {
+        background: #dcfce7;
+        color: #059669;
+      }
+      .ico.orange {
+        background: #ffedd5;
+        color: #ea580c;
+      }
+      .ico.pink {
+        background: #ffe4e6;
+        color: #db2777;
+      }
+      .ico.gray {
+        background: #e5e7eb;
+        color: #374151;
+      }
+
+      .company-grid {
+        display: grid;
+        grid-template-columns: repeat(6, 1fr);
+        gap: 12px;
+      }
+      .company {
+        background: #fff;
+        border: 1px solid #e5e7eb;
+        border-radius: 12px;
+        padding: 14px;
+        text-align: center;
+        font-weight: 600;
+        color: #334155;
+        box-shadow: 0 2px 10px rgba(2, 8, 23, 0.04);
+      }
+      .company small {
+        display: block;
+        color: #94a3b8;
+        font-weight: 500;
+        margin-top: 2px;
+      }
+
+      .list {
+        background: #fff;
+        border: 1px solid #e5e7eb;
+        border-radius: 16px;
+        overflow: hidden;
+      }
+      .list .head {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        background: #f8fafc;
+        padding: 10px 12px;
+        border-bottom: 1px solid #e5e7eb;
+        font-weight: 600;
+        color: #475569;
+      }
+      .list .row {
+        display: grid;
+        grid-template-columns: 120px 1fr 170px 110px 70px;
+        gap: 10px;
+        align-items: center;
+        padding: 10px 12px;
+        border-bottom: 1px solid #f1f5f9;
+      }
+      .badge {
+        font-size: 11px;
+        border-radius: 999px;
+        padding: 4px 8px;
+        background: #e2e8f0;
+        color: #475569;
+      }
+      .badge.ok {
+        background: #dcfce7;
+        color: #16a34a;
+      }
+      .badge.warn {
+        background: #fef3c7;
+        color: #d97706;
+      }
+      .badge.err {
+        background: #fee2e2;
+        color: #b91c1c;
+      }
+
+      /* YENİ: Teklif sonuç listesi için özel stiller */
+      .teklif-list .head {
+        display: grid;
+        grid-template-columns: 2fr 1fr 1fr 1fr;
+      }
+      .teklif-list .row {
+        display: grid;
+        grid-template-columns: 2fr 1fr 1fr 1fr;
+      }
+      .teklif-list .row:last-child {
+        border-bottom: none;
+      }
+
+      /* FORMS -------------------------------------------------- */
+      .form {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 14px;
+      }
+      .field {
+        display: flex;
+        flex-direction: column;
+        gap: 6px;
+      }
+      .field label {
+        font-weight: 600;
+        color: #334155;
+      }
+      .field input,
+      .field select {
+        height: 42px;
+        border: 1px solid #e2e8f0;
+        border-radius: 12px;
+        padding: 0 12px;
+        outline: none;
+        background: #fff;
+      }
+      .btn {
+        height: 44px;
+        border: none;
+        border-radius: 12px;
+        padding: 0 16px;
+        font-weight: 700;
+        cursor: pointer;
+        background: var(--grad);
+        color: #fff;
+        box-shadow: var(--ring);
+      }
+      .btn:disabled {
+        background: #94a3b8;
+        cursor: not-allowed;
+        box-shadow: none;
+      }
+      .btn.gray {
+        background: #e5e7eb;
+        color: #0f172a;
+        box-shadow: none;
+      }
+      .panel {
+        display: flex;
+        flex-direction: column;
+        gap: 16px;
+      }
+
+      /* RESULT DRAWER + TOAST ---------------------------------- */
+      .drawer {
+        position: fixed;
+        right: 20px;
+        bottom: 20px;
+        width: 360px;
+        background: #fff;
+        border: 1px solid #e2e8f0;
+        border-radius: 16px;
+        padding: 14px;
+        box-shadow: 0 30px 60px rgba(2, 8, 23, 0.25);
+        display: none;
+        z-index: 60;
+      }
+      .drawer h4 {
+        margin: 0 0 6px;
+      }
+      .toast {
+        position: fixed;
+        left: 50%;
+        transform: translateX(-50%);
+        bottom: 24px;
+        min-width: 260px;
+        background: #0f172a;
+        color: #e5e7eb;
+        padding: 12px 16px;
+        border-radius: 12px;
+        display: none;
+        z-index: 70;
+        box-shadow: 0 18px 40px rgba(2, 8, 23, 0.35);
+      }
+      .toast.ok {
+        background: #065f46;
+      }
+      .toast.err {
+        background: #7f1d1d;
+      }
+      .hidden {
+        display: none;
+      }
+      @media (max-width: 1200px) {
+        .quick-tiles {
+          grid-template-columns: repeat(4, 1fr);
+        }
+        .company-grid {
+          grid-template-columns: repeat(3, 1fr);
+        }
+        .list .row {
+          grid-template-columns: 100px 1fr 150px 100px 60px;
+        }
+      }
+      @media (max-width: 900px) {
+        .layout {
+          flex-direction: column;
+        }
+        .sidebar {
+          width: 100%;
+          height: auto;
+        }
+        .content {
+          padding: 16px;
+        }
+        .grid {
+          grid-template-columns: 1fr;
+        }
+        .form {
+          grid-template-columns: 1fr;
+        }
+      }
+      /* Teklif listesi grid güncellemesi */
+      .teklif-list .head {
+        display: grid;
+        grid-template-columns: 2fr 1fr 1fr 1fr 1fr;
+      }
+
+      .teklif-list .row {
+        display: grid;
+        grid-template-columns: 2fr 1fr 1fr 1fr 1fr;
+      }
+    </style>
+  </head>
+  <body>
+    <header class="header">
+      <div class="brand" onclick="navigate('dashboard')">
+        <svg viewBox="0 0 24 24" fill="currentColor">
+          <path d="M4 5h6l4 4h6v10a2 2 0 0 1-2 2H4V5z" />
+          <path d="M10 5v4h4" />
+        </svg>
+        <span>EESİGORTA</span>
+      </div>
+      <div class="search">
+        <svg width="22" height="22" viewBox="0 0 24 24" fill="#0f172a">
+          <path
+            d="M10 2a8 8 0 105.293 14.293l4.207 4.207 1.414-1.414-4.207-4.207A8 8 0 0010 2zm0 2a6 6 0 110 12A6 6 0 0110 4z"
+          />
+        </svg>
+        <input placeholder="Arama yapın... (kimlik, plaka, teklif no)" />
+      </div>
+      <span class="pill">7</span>
+      <div class="avatar"><span>EMRAH ÖZTÜRK</span></div>
+    </header>
+
+    <div class="layout">
+      <aside class="sidebar">
+        <nav class="menu" id="menu">
+          <a
+            href="#"
+            data-page="dashboard"
+            class="active"
+            onclick="navigate('dashboard')"
+          >
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor">
+              <path d="M3 12l9-9 9 9h-3v9H6v-9z" />
+            </svg>
+            Dashboard
+          </a>
+          <a href="#" data-page="trafik" onclick="navigate('trafik')">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor">
+              <path
+                d="M5 17h14l1 3H4l1-3zm14-2H5l-1-4h16l-1 4zM7 7h10l2 4H5l2-4z"
+              />
+            </svg>
+            Trafik Sigortası
+          </a>
+          <a href="#" data-page="kasko" onclick="navigate('kasko')">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor">
+              <path d="M12 2l9 4-9 4-9-4 9-4zm9 7v7l-9 4-9-4V9l9 4 9-4z" />
+            </svg>
+            Kasko
+          </a>
+          <a href="#" data-page="tss" onclick="navigate('tss')">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor">
+              <path d="M12 21s8-4 8-10V5l-8-3-8 3v6c0 6 8 10 8 10z" />
+            </svg>
+            Tamamlayıcı Sağlık
+          </a>
+          <a href="#" data-page="seyahat" onclick="navigate('seyahat')">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor">
+              <path d="M10 21l-1-4-4-1 8-8 5 5-8 8zM2 12l4 1 1 4" />
+            </svg>
+            Seyahat Sağlık
+          </a>
+          <a href="#" data-page="dask" onclick="navigate('dask')">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor">
+              <path
+                d="M3 11l9-9 9 9v10a2 2 0 0 1-2 2h-4v-6H9v6H5a2 2 0 0 1-2-2V11z"
+              />
+            </svg>
+            DASK
+          </a>
+          <a href="#" data-page="konut" onclick="navigate('konut')">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor">
+              <path d="M12 3l9 8h-3v9H6v-9H3l9-8z" />
+            </svg>
+            Konut
+          </a>
+          <a href="#" data-page="rapor" onclick="navigate('rapor')">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor">
+              <path
+                d="M4 3h14l2 4v14a2 2 0 0 1-2 2H4V3zm2 6h10v2H6V9zm0 4h10v2H6v-2z"
+              />
+            </svg>
+            Aylık Rapor
+          </a>
+        </nav>
+      </aside>
+
+      <main class="content">
+        <div id="page"></div>
+      </main>
+    </div>
+
+    <div id="drawer" class="drawer">
+      <h4>Sonuç</h4>
+      <div id="drawerBody" style="white-space: pre-wrap; color: #0f172a"></div>
+    </div>
+    <div id="toast" class="toast">Mesaj</div>
+
+    <script>
+      // ---------- Helpers ----------
+      const $ = (q, ctx = document) => ctx.querySelector(q);
+      const $$ = (q, ctx = document) => ctx.querySelectorAll(q);
+      const API = "http://127.0.0.1:5000";
+
+      function setActive(page) {
+        $$("#menu a").forEach((a) => {
+          a.classList.toggle("active", a.dataset.page === page);
+        });
+      }
+      function toast(msg, type = "ok") {
+        const el = $("#toast");
+        el.textContent = msg;
+        el.className = `toast ${type}`;
+        el.style.display = "block";
+        setTimeout(() => (el.style.display = "none"), 2200);
+      }
+      function openDrawer(text) {
+        $("#drawerBody").textContent = text;
+        $("#drawer").style.display = "block";
+      }
+      function closeDrawer() {
+        $("#drawer").style.display = "none";
+      }
+
+      // Bu fonksiyon diğer sigorta türleri için kullanılmaya devam edecek.
+      async function callApi(endpoint, payload) {
+        try {
+          const res = await fetch(API + endpoint, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify(payload || {}),
+          });
+          const data = await res.json();
+          if (!data.ok) throw new Error(data.error || "Bilinmeyen hata");
+
+          // Fiyat bilgisini göster
+          const resultText = `Fiyat: ${data.price}\n\nMesaj: ${data.message}`;
+          openDrawer(resultText);
+          toast("İşlem başarılı", "ok");
+        } catch (err) {
+          openDrawer("Hata: " + err.message);
+          toast("Hata oluştu", "err");
+        }
+      }
+      // callKaskoApi fonksiyonunu güncelle
+      async function callKaskoApi(payload) {
+        const submitBtn = $("#kaskoSubmitBtn");
+        const resultContainer = $("#kasko-sonuclari");
+
+        submitBtn.disabled = true;
+        submitBtn.textContent = "Teklifler Aranıyor...";
+        resultContainer.innerHTML = `<div class="card"><p>Lütfen bekleyin, sigorta şirketlerinden kasko teklifleri alınıyor...</p></div>`;
+        closeDrawer();
+
+        try {
+          const res = await fetch(API + "/api/kasko", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify(payload),
+          });
+          const data = await res.json();
+
+          if (!data.ok) {
+            throw new Error(data.message || "Bilinmeyen bir hata oluştu.");
+          }
+
+          // Kasko için özel HTML formatı - Ödeme tipi sütunu eklendi
+          let html = `
+            <div class="card">
+                <h3 style="margin:0 0 10px">${data.message}</h3>
+                <p style="margin:0 0 14px; color: var(--muted);">
+                    En uygun teklif: <b style="color:var(--ok)">${
+                      data.en_uygun_teklif
+                    }</b>
+                    ${
+                      data.pesin_fiyat && data.taksitli_fiyat
+                        ? `<br>Peşin: ${data.pesin_fiyat} | Taksitli: ${data.taksitli_fiyat}`
+                        : ""
+                    }
+                </p>
+                <div class="list teklif-list">
+                    <div class="head">
+                        <div>Şirket</div>
+                        <div>Ödeme Tipi</div>
+                        <div>Prim</div>
+                        <div>Fiyat</div>
+                        <div>Durum</div>
+                    </div>
+                    ${data.teklifler
+                      .map(
+                        (teklif) => `
+                        <div class="row">
+                            <div style="font-weight:700">${teklif.sirket
+                              .replace(" (Peşin)", "")
+                              .replace(" (Taksitli)", "")}</div>
+                            <div>${teklif.odeme_tipi || "-"}</div>
+                            <div>${teklif.prim}</div>
+                            <div>${teklif.fiyat}</div>
+                            <div><span class="badge ${
+                              teklif.durum.includes("Mevcut")
+                                ? "ok"
+                                : teklif.durum.includes("Beklemede")
+                                ? "warn"
+                                : ""
+                            }">${teklif.durum}</span></div>
+                        </div>
+                    `
+                      )
+                      .join("")}
+                </div>
+            </div>`;
+
+          resultContainer.innerHTML = html;
+          toast("Kasko teklifleri başarıyla alındı.", "ok");
+        } catch (err) {
+          resultContainer.innerHTML = `<div class="card" style="border-color: var(--err);"><p style="color:var(--err); font-weight:600;">Hata: ${err.message}</p></div>`;
+          toast("Kasko teklifi alınırken bir hata oluştu.", "err");
+        } finally {
+          submitBtn.disabled = false;
+          submitBtn.textContent = "Teklif Al";
+        }
+      }
+      // Kasko form submit handler
+      function submitKasko(e) {
+        e.preventDefault();
+        const payload = {
+          tc: $("#k_tc").value.trim(),
+          dogumTarih: $("#k_dogum").value.trim(),
+          plaka: $("#k_plaka").value.trim(),
+          ruhsatSeri: $("#k_seri").value.trim(),
+          ruhsatKod: $("#k_kod").value.trim(),
+          tasitTipi: $("#k_tasit").value,
+          marka: $("#k_marka").value,
+          model: $("#k_model").value.trim(),
+        };
+        callKaskoApi(payload);
+      }
+
+      // ---------- Pages ----------
+      function dashboard() {
+        return `
+      <div class="grid" style="grid-template-rows:auto;">
+
+        <div class="card" style="grid-column:span 4;">
+          <div class="kpi">
+            <div class="mini"><canvas id="spark1" width="60" height="36"></canvas></div>
+            <div>
+              <h3>Teklif Adedi <span class="chip blue">Eylül</span></h3>
+              <div class="val">137</div>
+              <div style="color:#64748b">159 ortalama</div>
+            </div>
+          </div>
+        </div>
+
+        <div class="card" style="grid-column:span 4;">
+          <div class="kpi">
+            <div class="mini"><canvas id="spark2" width="60" height="36"></canvas></div>
+            <div>
+              <h3>Poliçe Adedi <span class="chip green">Eylül</span></h3>
+              <div class="val">14</div>
+              <div style="color:#64748b">31 ortalama</div>
+            </div>
+          </div>
+        </div>
+
+        <div class="card" style="grid-column:span 4;">
+          <div class="kpi">
+            <div class="mini"><canvas id="spark3" width="60" height="36"></canvas></div>
+            <div>
+              <h3>Yenileme Adedi <span class="chip red">Eylül</span></h3>
+              <div class="val" style="color:#ef4444">14 <small style="color:#ef4444;font-weight:700">(−11,11%)</small></div>
+              <div style="color:#64748b">5 vadesi geçen</div>
+            </div>
+          </div>
+        </div>
+
+        <div class="card" style="grid-column:span 12;">
+          <div class="quick-tiles">
+            ${tile("Trafik", "blue", "navigate('trafik')")}
+            ${tile("Kasko", "purple", "navigate('kasko')")}
+            ${tile("Tamamlayıcı Sağlık", "green", "navigate('tss')")}
+            ${tile("DASK", "gray", "navigate('dask')")}
+            ${tile("Konut", "orange", "navigate('konut')")}
+            ${tile("Ferdi Kaza", "pink")}
+            ${tile("Seyahat Sağlık", "blue", "navigate('seyahat')")}
+            ${tile("IMM", "gray")}
+          </div>
+        </div>
+
+        <div class="card" style="grid-column:span 8;">
+          <h3 style="margin:0 0 10px">Şirket Ekranı <small style="color:#94a3b8">(30)</small></h3>
+          <div class="company-grid">
+            ${[
+              "AKSigorta",
+              "Allianz",
+              "Ana",
+              "Anadolu",
+              "Ankara",
+              "Arex",
+              "Atlas",
+              "Aveon",
+              "AXA",
+              "Corpus",
+              "Doğa",
+              "Generali",
+              "Gulf Hızlı",
+              "HDI",
+              "HepiYı",
+              "Kaptan",
+              "Koru",
+              "Magdeburger",
+              "Mapfre",
+              "Orient",
+              "Prive",
+              "Quick Hayat",
+              "Quick",
+              "Ray",
+              "Sompo",
+              "Türk Nippon",
+              "Türkiye",
+              "Unico",
+              "VHV",
+              "Zurich",
+            ]
+              .map(
+                (n) => `<div class="company">${n} <small>SİGORTA</small></div>`
+              )
+              .join("")}
+          </div>
+        </div>
+
+        <div class="list" style="grid-column:span 4;">
+          <div class="head">
+            <input id="searchOffer" placeholder="Kimlik No, Plaka, Teklif No giriniz" style="flex:1;height:38px;border:1px solid #e2e8f0;border-radius:12px;padding:0 12px;outline:none"/>
+          </div>
+          ${offer(
+            "28ADN676",
+            "Bayram Pektaş",
+            "20 Eyl 2025 12:11",
+            "6 gün kaldı",
+            "T"
+          )}
+          ${offer(
+            "28ABG385",
+            "Mustafa Kugu",
+            "20 Eyl 2025 09:40",
+            "3 gün kaldı",
+            "T",
+            "warn"
+          )}
+          ${offer(
+            "61RA318",
+            "Emirhan Keskin",
+            "20 Eyl 2025 09:13",
+            "3 gün kaldı",
+            "T"
+          )}
+          ${offer(
+            "34GKG487",
+            "Adem Öztürk",
+            "19 Eyl 2025 09:13",
+            "2 gün kaldı",
+            "T"
+          )}
+          ${offer(
+            "AVUSTURYA",
+            "Caner Genç",
+            "19 Eyl 2025 19:34",
+            "2 gün kaldı",
+            "B",
+            "err"
+          )}
+          ${offer(
+            "28ACV635",
+            "Caner Genç",
+            "19 Eyl 2025 19:29",
+            "2 gün kaldı",
+            "T"
+          )}
+          <div style="padding:12px;display:flex;gap:8px">
+            <button class="btn gray" onclick="toast('Teklif talebi oluşturuldu','ok')">Teklif Talebi</button>
+            <button class="btn gray" onclick="toast('Zeyil talebi alındı','ok')">Zeyil Talebi</button>
+            <button class="btn gray" onclick="toast('Hasar talebi iletildi','ok')">Hasar Talebi</button>
+            <button class="btn gray" onclick="toast('Destek talebi iletildi','ok')">Destek Talebi</button>
+          </div>
+        </div>
+
+      </div>`;
+      }
+      function tile(text, color, onclick) {
+        return `<div class="tile" ${onclick ? `onclick="${onclick}"` : ""}>
+      <div class="ico ${color}">
+        <svg width="22" height="22" viewBox="0 0 24 24" fill="currentColor"><circle cx="12" cy="12" r="10"/></svg>
+      </div>
+      <span>${text}</span>
+    </div>`;
+      }
+      function offer(no, ad, tarih, kalan, tip, status) {
+        return `<div class="row">
+      <div style="font-weight:800;color:#1d4ed8">${no}</div>
+      <div>${ad}</div>
+      <div style="color:#64748b">${tarih}</div>
+      <div><span class="badge ${status || ""}">${kalan}</span></div>
+      <div style="text-align:center;color:#334155">${tip}</div>
+    </div>`;
+      }
+
+      function trafik() {
+        return `
+    <div class="panel">
+      <div class="card">
+        <h2 style="margin:0 0 14px">Trafik Sigortası Teklifi</h2>
+        <form class="form" id="trafikForm" onsubmit="submitTrafik(event)">
+          <div class="field"><label>TC Kimlik No</label><input id="t_tc" required placeholder="TC Kimlik numaranızı girin"></div>
+          <div class="field"><label>Plaka</label><input id="t_plaka" required placeholder="Plaka numarasını girin"></div>
+          <div class="field"><label>Ruhsat Seri No</label><input id="t_seri" required placeholder="Ruhsat seri numarasını girin"></div>
+          <div class="field"><label>Ruhsat Kod</label><input id="t_kod" required placeholder="Ruhsat kodunu girin"></div>
+          <div class="field"><label>Taşıt Tipi</label>
+            <select id="t_tasit" required>
+              <option value="">Seçiniz</option>
+              <option>Otomobil</option><option>Kamyonet</option><option>Minibüs</option><option>Motosiklet</option>
+            </select>
+          </div>
+          <div class="field"><label>Marka</label>
+            <select id="t_marka" required>
+              <option value="">Seçiniz</option>
+              <option>Fiat</option><option>Ford</option><option>Renault</option><option>Toyota</option><option>Tofaş</option>
+            </select>
+          </div>
+          <div class="field" style="grid-column:1/-1"><label>Model</label><input id="t_model" required placeholder="Araç modelini girin"></div>
+          <div style="grid-column:1/-1;display:flex;gap:10px;justify-content:flex-end">
+            <button type="button" class="btn gray" onclick="$('#trafikForm').reset(); $('#trafik-sonuclari').innerHTML = '';">Temizle</button>
+            <button class="btn" id="trafikSubmitBtn">Teklif Al</button>
+          </div>
+        </form>
+      </div>
+      <div id="trafik-sonuclari" style="margin-top: 16px;"></div>
+    </div>`;
+      }
+
+      function tss() {
+        return `
+    <div class="panel">
+      <div class="card">
+        <h2 style="margin:0 0 14px">Tamamlayıcı Sağlık Teklifi</h2>
+        <form class="form" onsubmit="submitTss(event)">
+          <div class="field"><label>TC Kimlik No</label><input id="s_tc" required placeholder="TC Kimlik"></div>
+          <div class="field"><label>Doğum Tarihi</label><input id="s_dogum" required placeholder="GG.AA.YYYY"></div>
+          <div class="field"><label>Telefon</label><input id="s_tel" required placeholder="5XXXXXXXXX"></div>
+          <div class="field"><label>E-posta</label><input id="s_email" placeholder="e-posta (opsiyonel)"></div>
+          <div style="grid-column:1/-1;display:flex;gap:10px;justify-content:flex-end">
+            <button type="button" class="btn gray" onclick="closeDrawer()">Temizle</button>
+            <button class="btn">Teklif Al</button>
+          </div>
+        </form>
+      </div>
+    </div>`;
+      }
+
+      function seyahat() {
+        return `
+    <div class="panel">
+      <div class="card">
+        <h2 style="margin:0 0 14px">Seyahat Sağlık Teklifi</h2>
+        <form class="form" onsubmit="submitSeyahat(event)">
+          <div class="field"><label>TC Kimlik No</label><input id="y_tc" required placeholder="TC Kimlik"></div>
+          <div class="field"><label>Yurt İçi mi?</label>
+            <select id="y_yurtici"><option value="true">Evet</option><option value="false">Hayır</option></select>
+          </div>
+          <div class="field"><label>Gidiş Tarihi</label><input id="y_gidis" required placeholder="GG.AA.YYYY"></div>
+          <div class="field"><label>Dönüş Tarihi</label><input id="y_donus" required placeholder="GG.AA.YYYY"></div>
+          <div class="field"><label>Ülke (Yurtdışı)</label><input id="y_ulke" placeholder="Örn: Almanya"></div>
+          <div class="field"><label>İl (Yurt içi)</label><input id="y_il" placeholder="Örn: Tokat"></div>
+          <div class="field"><label>Bölge</label>
+            <select id="y_bolge">
+              <option value="avrupa">Avrupa</option>
+              <option value="tum">Tüm Dünya</option>
+            </select>
+          </div>
+          <div style="grid-column:1/-1;display:flex;gap:10px;justify-content:flex-end">
+            <button type="button" class="btn gray" onclick="closeDrawer()">Temizle</button>
+            <button class="btn">Teklif Al</button>
+          </div>
+        </form>
+      </div>
+    </div>`;
+      }
+
+      function rapor() {
+        return `
+      <div class="panel">
+        <div class="grid">
+          <div class="card" style="grid-column:span 12;"><h2 style="margin:0 0 12px">Aylık Rapor</h2></div>
+          <div class="card" style="grid-column:span 4"><h3>Toplam Poliçe</h3><div class="val" style="font-size:28px;font-weight:800">200.000 TL</div></div>
+          <div class="card" style="grid-column:span 4"><h3>Bu Ay Gelir</h3><div class="val" style="font-size:28px;color:#16a34a;font-weight:800">150.000 TL</div></div>
+          <div class="card" style="grid-column:span 4"><h3>Aktif Müşteri</h3><div class="val" style="font-size:28px;font-weight:800">32</div></div>
+          <div class="card" style="grid-column:span 6"><canvas id="pie"></canvas></div>
+          <div class="card" style="grid-column:span 6"><canvas id="line"></canvas></div>
+        </div>
+      </div>`;
+      }
+
+      // Kasko sayfasını güncelle
+      function kasko() {
+        return `
+    <div class="panel">
+        <div class="card">
+            <h2 style="margin:0 0 14px">Kasko Teklifi</h2>
+            <form class="form" id="kaskoForm" onsubmit="submitKasko(event)">
+                <div class="field"><label>TC Kimlik No</label><input id="k_tc" required placeholder="TC Kimlik numaranızı girin"></div>
+                <div class="field"><label>Doğum Tarihi</label><input id="k_dogum" required placeholder="GG.AA.YYYY"></div>
+                <div class="field"><label>Plaka</label><input id="k_plaka" required placeholder="Plaka numarasını girin"></div>
+                <div class="field"><label>Ruhsat Seri No</label><input id="k_seri" required placeholder="Ruhsat seri numarasını girin"></div>
+                <div class="field"><label>Ruhsat Kod</label><input id="k_kod" required placeholder="Ruhsat kodunu girin"></div>
+                <div class="field"><label>Taşıt Tipi</label>
+                    <select id="k_tasit" required>
+                        <option value="">Seçiniz</option>
+                        <option>Otomobil</option><option>Kamyonet</option><option>Minibüs</option><option>Motosiklet</option>
+                    </select>
+                </div>
+                <div class="field"><label>Marka</label>
+                    <select id="k_marka" required>
+                        <option value="">Seçiniz</option>
+                        <option>Fiat</option><option>Ford</option><option>Renault</option><option>Toyota</option><option>Tofaş</option>
+                    </select>
+                </div>
+                <div class="field" style="grid-column:1/-1"><label>Model</label><input id="k_model" required placeholder="Araç modelini girin"></div>
+                <div style="grid-column:1/-1;display:flex;gap:10px;justify-content:flex-end">
+                    <button type="button" class="btn gray" onclick="$('#kaskoForm').reset(); $('#kasko-sonuclari').innerHTML = '';">Temizle</button>
+                    <button class="btn" id="kaskoSubmitBtn">Teklif Al</button>
+                </div>
+            </form>
+        </div>
+        <div id="kasko-sonuclari" style="margin-top: 16px;"></div>
+    </div>`;
+      }
+      function dask() {
+        return `<div class="card"><h2>DASK</h2><p>Yakında…</p></div>`;
+      }
+      function konut() {
+        return `<div class="card"><h2>Konut</h2><p>Yakında…</p></div>`;
+      }
+
+      // ---------- Submit handlers ----------
+
+      // YENİ: Trafik API'sini çağıran ve sonuçları listeleyen özel fonksiyon
+      async function callTrafikApi(payload) {
+        const submitBtn = $("#trafikSubmitBtn");
+        const resultContainer = $("#trafik-sonuclari");
+
+        // 1. Yüklenme durumunu başlat
+        submitBtn.disabled = true;
+        submitBtn.textContent = "Teklifler Aranıyor...";
+        resultContainer.innerHTML = `<div class="card"><p>Lütfen bekleyin, sigorta şirketlerinden teklifler alınıyor...</p></div>`;
+        closeDrawer();
+
+        try {
+          const res = await fetch(API + "/api/trafik", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify(payload),
+          });
+          const data = await res.json();
+
+          if (!data.ok) {
+            throw new Error(data.message || "Bilinmeyen bir hata oluştu.");
+          }
+
+          // 2. Başarılı sonuçları HTML'e dönüştür
+          let html = `
+            <div class="card">
+              <h3 style="margin:0 0 10px">${data.message}</h3>
+              <p style="margin:0 0 14px; color: var(--muted);">En uygun teklif: <b style="color:var(--ok)">${
+                data.en_uygun_teklif
+              }</b></p>
+              <div class="list teklif-list">
+                <div class="head">
+                  <div>Şirket</div>
+                  <div>Prim</div>
+                  <div>Fiyat</div>
+                  <div>Durum</div>
+                </div>
+                ${data.teklifler
+                  .map(
+                    (teklif) => `
+                  <div class="row">
+                    <div style="font-weight:700">${teklif.sirket}</div>
+                    <div>${teklif.prim}</div>
+                    <div>${teklif.fiyat}</div>
+                    <div><span class="badge ${
+                      teklif.durum.includes("Mevcut") ? "ok" : "warn"
+                    }">${teklif.durum}</span></div>
+                  </div>
+                `
+                  )
+                  .join("")}
+              </div>
+            </div>`;
+
+          resultContainer.innerHTML = html;
+          toast("Teklifler başarıyla alındı.", "ok");
+        } catch (err) {
+          // 3. Hata durumunu göster
+          resultContainer.innerHTML = `<div class="card" style="border-color: var(--err);"><p style="color:var(--err); font-weight:600;">Hata: ${err.message}</p></div>`;
+          toast("Teklif alınırken bir hata oluştu.", "err");
+        } finally {
+          // 4. Yüklenme durumunu bitir
+          submitBtn.disabled = false;
+          submitBtn.textContent = "Teklif Al";
+        }
+      }
+      // YENİ: Seyahat API'sini çağıran ve sonuçları listeleyen özel fonksiyon
+      function submitSeyahat(e) {
+        e.preventDefault();
+        const yurtici = $("#y_yurtici").value === "true";
+        const gidilecekIl = $("#y_il").value.trim();
+        const ulke = $("#y_ulke").value.trim();
+
+        // ✅ Yurt içi seçildiyse şehir boş olamaz
+        if (yurtici && !gidilecekIl) {
+          toast("Yurt içi seçtiniz — lütfen gideceğiniz ili girin.", "err");
+          return;
+        }
+
+        // ✅ Yurt dışı seçildiyse ülke boş olamaz
+        if (!yurtici && !ulke) {
+          toast("Yurt dışı seçtiniz — lütfen gideceğiniz ülkeyi girin.", "err");
+          return;
+        }
+
+        const payload = {
+          tc: $("#y_tc").value.trim(),
+          gidisTarih: $("#y_gidis").value.trim(),
+          donusTarih: $("#y_donus").value.trim(),
+          yurtici: yurtici,
+          yurtdisi: !yurtici,
+          avrupa: $("#y_bolge").value === "avrupa",
+          tumDunya: $("#y_bolge").value === "tum",
+          gidilecekIl: gidilecekIl,
+          ulke: ulke,
+        };
+
+        // ✅ API çağrısı
+        callSeyahatApi(payload);
+      }
+
+      async function callSeyahatApi(payload) {
+        const submitBtn = document.getElementById("seyahatSubmitBtn");
+        const resultContainer = document.getElementById("seyahat-sonuclari");
+
+        // 1. Yüklenme durumunu başlat
+        submitBtn.disabled = true;
+        submitBtn.textContent = "Teklifler Aranıyor...";
+        resultContainer.innerHTML = `<div class="card"><p>Lütfen bekleyin, sigorta şirketlerinden seyahat sağlık teklifleri alınıyor...</p></div>`;
+        closeDrawer();
+
+        try {
+          // ✅ Doğru endpoint'i kullan
+          const res = await fetch(API + "/api/seyahat-saglik", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify(payload),
+          });
+          const data = await res.json();
+
+          if (!data.ok) {
+            throw new Error(data.message || "Bilinmeyen bir hata oluştu.");
+          }
+
+          // 2. Başarılı sonuçları HTML'e dönüştür
+          let html = `
+            <div class="card">
+                <h3 style="margin:0 0 10px">${data.message}</h3>
+                <p style="margin:0 0 14px; color: var(--muted);">En uygun teklif: 
+                    <b style="color:var(--ok)">${data.en_uygun_teklif}</b>
+                </p>
+                <div class="list teklif-list">
+                    <div class="head">
+                        <div>Şirket</div>
+                        <div>Prim</div>
+                        <div>Fiyat</div>
+                        <div>Durum</div>
+                    </div>
+                    ${data.teklifler
+                      .map(
+                        (teklif, index) => `
+                        <div class="row">
+                            <div style="font-weight:700">${teklif.sirket}</div>
+                            <div>${teklif.prim}</div>
+                            <div>${teklif.fiyat}</div>
+                            <div><span class="badge ${
+                              teklif.durum.includes("Mevcut") ? "ok" : "warn"
+                            }">${teklif.durum}</span></div>
+                        </div>
+                    `
+                      )
+                      .join("")}
+                </div>
+            </div>`;
+
+          resultContainer.innerHTML = html;
+          toast("Seyahat sağlık teklifleri başarıyla alındı.", "ok");
+        } catch (err) {
+          // 3. Hata durumunu göster
+          resultContainer.innerHTML = `<div class="card" style="border-color: var(--err);">
+            <p style="color:var(--err); font-weight:600;">Hata: ${err.message}</p>
+        </div>`;
+          toast("Seyahat sağlık teklifi alınırken bir hata oluştu.", "err");
+        } finally {
+          // 4. Yüklenme durumunu bitir
+          submitBtn.disabled = false;
+          submitBtn.textContent = "Teklif Al";
+        }
+      }
+
+      // Seyahat sayfasını güncelle (ID'leri ekleyelim)
+      function seyahat() {
+        return `
+    <div class="panel">
+        <div class="card">
+            <h2 style="margin:0 0 14px">Seyahat Sağlık Teklifi</h2>
+            <form class="form" id="seyahatForm" onsubmit="submitSeyahat(event)">
+                <div class="field"><label>TC Kimlik No</label><input id="y_tc" required placeholder="TC Kimlik"></div>
+                <div class="field"><label>Yurt İçi mi?</label>
+                    <select id="y_yurtici">
+                        <option value="false">Hayır (Yurt Dışı)</option>
+                        <option value="true">Evet (Yurt İçi)</option>
+                    </select>
+                </div>
+                <div class="field"><label>Gidiş Tarihi</label><input id="y_gidis" required placeholder="GG.AA.YYYY"></div>
+                <div class="field"><label>Dönüş Tarihi</label><input id="y_donus" required placeholder="GG.AA.YYYY"></div>
+                <div class="field" id="y_ulke_field"><label>Ülke (Yurtdışı)</label><input id="y_ulke" placeholder="Örn: Almanya"></div>
+                <div class="field " id="y_il_field"><label>İl (Yurt içi)</label><input id="y_il" placeholder="Örn: Tokat"></div>
+                <div class="field" id="y_bolge_field"><label>Bölge (Yurtdışı)</label>
+                    <select id="y_bolge">
+                        <option value="avrupa">Avrupa</option>
+                        <option value="tum">Tüm Dünya</option>
+                    </select>
+                </div>
+                <div style="grid-column:1/-1;display:flex;gap:10px;justify-content:flex-end">
+                    <button type="button" class="btn gray" onclick="$('#seyahatForm').reset(); $('#seyahat-sonuclari').innerHTML = ''; toggleSeyahatFields();">Temizle</button>
+                    <button class="btn" id="seyahatSubmitBtn">Teklif Al</button>
+                </div>
+            </form>
+        </div>
+        <div id="seyahat-sonuclari" style="margin-top: 16px;"></div>
+    </div>`;
+      }
+
+      // Yurtiçi/yurtdışı seçimine göre alanları göster/gizle
+      function toggleSeyahatFields() {
+        const yurticiSelect = document.getElementById("y_yurtici");
+        if (!yurticiSelect) return;
+
+        const yurtici = yurticiSelect.value === "true";
+        const ulkeField = document.getElementById("y_ulke_field");
+        const ilField = document.getElementById("y_il_field");
+        const bolgeField = document.getElementById("y_bolge_field");
+
+        if (yurtici) {
+          // Yurt içi seçildi - il göster, ülke ve bölge gizle
+          ilField.classList.remove("hidden");
+          ulkeField.classList.add("hidden");
+          bolgeField.classList.add("hidden");
+        } else {
+          // Yurt dışı seçildi - il gizle, ülke ve bölge göster
+          ilField.classList.add("hidden");
+          ulkeField.classList.remove("hidden");
+          bolgeField.classList.remove("hidden");
+        }
+      }
+
+      // Sayfa yüklendiğinde ve seçim değiştiğinde alanları güncelle
+      document.addEventListener("DOMContentLoaded", function () {
+        // Seyahat sayfasındaki yurtiçi/yurtdışı seçimini dinle
+        const yurticiSelect = document.getElementById("y_yurtici");
+        if (yurticiSelect) {
+          yurticiSelect.addEventListener("change", toggleSeyahatFields);
+          toggleSeyahatFields(); // İlk yüklemede alanları ayarla
+        }
+      });
+
+      function submitTrafik(e) {
+        e.preventDefault();
+        const payload = {
+          tc: $("#t_tc").value.trim(),
+          plaka: $("#t_plaka").value.trim(),
+          ruhsatSeri: $("#t_seri").value.trim(),
+          ruhsatKod: $("#t_kod").value.trim(),
+          tasitTipi: $("#t_tasit").value,
+          marka: $("#t_marka").value,
+          model: $("#t_model").value.trim(),
+        };
+        // YENİ: Artık özel trafik fonksiyonunu çağırıyoruz
+        callTrafikApi(payload);
+      }
+
+      function submitTss(e) {
+        e.preventDefault();
+        const payload = {
+          tc: $("#s_tc").value.trim(),
+          dogumTarih: $("#s_dogum").value.trim(),
+          tel: $("#s_tel").value.trim(),
+          email: ($("#s_email")?.value || "panel@example.com").trim(),
+        };
+        // Eski genel fonksiyonu kullanmaya devam ediyor
+        callApi("/api/tamamlayici-saglik", payload);
+      }
+
+      function submitSeyahat(e) {
+        e.preventDefault();
+        const yurtici = document.getElementById("y_yurtici").value === "true";
+        const payload = {
+          tc: document.getElementById("y_tc").value.trim(),
+          gidisTarih: document.getElementById("y_gidis").value.trim(),
+          donusTarih: document.getElementById("y_donus").value.trim(),
+          yurtici: yurtici,
+          yurtdisi: !yurtici,
+          avrupa: document.getElementById("y_bolge").value === "avrupa",
+          tumDunya: document.getElementById("y_bolge").value === "tum",
+          gidilecekIl: document.getElementById("y_il").value.trim(),
+          ulke: document.getElementById("y_ulke").value.trim(),
+        };
+
+        callSeyahatApi(payload);
+      }
+
+      // ---------- Router ----------
+      function navigate(page) {
+        setActive(page);
+        const el = $("#page");
+        closeDrawer();
+        if (page === "dashboard") {
+          el.innerHTML = dashboard();
+          setTimeout(initSparks, 10);
+          return;
+        }
+        if (page === "trafik") {
+          el.innerHTML = trafik();
+          return;
+        }
+        if (page === "kasko") {
+          el.innerHTML = kasko();
+          return;
+        }
+        if (page === "tss") {
+          el.innerHTML = tss();
+          return;
+        }
+        if (page === "seyahat") {
+          el.innerHTML = seyahat();
+          setTimeout(() => {
+            const yurticiSelect = document.getElementById("y_yurtici");
+            if (yurticiSelect) {
+              yurticiSelect.addEventListener("change", toggleSeyahatFields);
+              toggleSeyahatFields();
+            }
+          }, 100);
+          return;
+        }
+        if (page === "dask") {
+          el.innerHTML = dask();
+          return;
+        }
+        if (page === "konut") {
+          el.innerHTML = konut();
+          return;
+        }
+        if (page === "rapor") {
+          el.innerHTML = rapor();
+          setTimeout(initCharts, 50);
+          return;
+        }
+      }
+
+      // ---------- Charts ----------
+      function initSparks() {
+        const cfg = (data, color) => ({
+          type: "bar",
+          data: {
+            labels: data.map((_, i) => i + 1),
+            datasets: [{ data, borderWidth: 0, backgroundColor: color }],
+          },
+          options: {
+            plugins: { legend: { display: false } },
+            scales: { x: { display: false }, y: { display: false } },
+          },
+        });
+        new Chart($("#spark1"), cfg([5, 7, 6, 9, 8, 7, 6, 7], "#60a5fa"));
+        new Chart($("#spark2"), cfg([3, 4, 3, 5, 4, 4, 3, 5], "#34d399"));
+        new Chart($("#spark3"), cfg([6, 5, 5, 4, 4, 3, 3, 2], "#f87171"));
+      }
+      function initCharts() {
+        new Chart($("#pie"), {
+          type: "pie",
+          data: {
+            labels: ["Trafik", "Sağlık", "Seyahat", "Kasko", "Konut"],
+            datasets: [
+              {
+                data: [80000, 50000, 30000, 25000, 15000],
+                backgroundColor: [
+                  "#3b82f6",
+                  "#10b981",
+                  "#06b6d4",
+                  "#8b5cf6",
+                  "#f97316",
+                ],
+              },
+            ],
+          },
+        });
+        new Chart($("#line"), {
+          type: "line",
+          data: {
+            labels: ["Nis", "May", "Haz", "Tem", "Ağu", "Eyl"],
+            datasets: [
+              {
+                label: "Poliçe Tutarı",
+                data: [120000, 140000, 150000, 160000, 180000, 200000],
+                borderColor: "#3b82f6",
+                tension: 0.35,
+                fill: false,
+              },
+            ],
+          },
+          options: { plugins: { legend: { display: false } } },
+        });
+      }
+
+      // boot
+      navigate("dashboard");
+    </script>
+  </body>
+</html>

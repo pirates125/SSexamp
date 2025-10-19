@@ -1,0 +1,61 @@
+[
+    {
+        "domain": ".quicksigorta.com",
+        "httpOnly": true,
+        "name": "PHPSESSID",
+        "path": "/",
+        "sameSite": "Lax",
+        "secure": true,
+        "value": "bb8c4b18bf00c6580c01bc401be779ca"
+    },
+    {
+        "domain": ".portal.quicksigorta.com",
+        "expiry": 1759085945,
+        "httpOnly": false,
+        "name": "q-user-preferences",
+        "path": "/",
+        "sameSite": "Lax",
+        "secure": false,
+        "value": "%7B%22sidebarMode%22%3A%22compact%22%7D"
+    },
+    {
+        "domain": ".portal.quicksigorta.com",
+        "expiry": 1759085945,
+        "httpOnly": false,
+        "name": "q-token",
+        "path": "/",
+        "sameSite": "Lax",
+        "secure": false,
+        "value": "eyJhbGciOiJIUzUxMiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIyMzg1OCIsImV4cCI6MTc1OTA4NTk0NCwiaXNzIjoicS1wb3J0YWwiLCJhdWQiOiJpZGVudGl0eSJ9.71q61_GW7P-6I9VyRZj4BKQDlkSddAlNCAnG8M74Ggyik-_xsQjwB1dcURvJ2Ea8A6YjB6YF_F4q-OOq4Cr9lQ"
+    },
+    {
+        "domain": ".portal.quicksigorta.com",
+        "expiry": 1759085945,
+        "httpOnly": false,
+        "name": "q-user",
+        "path": "/",
+        "sameSite": "Lax",
+        "secure": false,
+        "value": "%7B%22username%22%3A%22A600110001%22%2C%22name%22%3A%22EMRAH%22%2C%22surname%22%3A%22%C3%96ZT%C3%9CRK%22%2C%22sourceId%22%3A%22KY%22%2C%22regionId%22%3A%22-1%22%2C%22customerCode%22%3A%22600110%22%2C%22type%22%3A%22agency%22%2C%22qportUrl%22%3A%22https%3A%2F%2Facente.quicksigorta.com%22%7D"
+    },
+    {
+        "domain": ".quicksigorta.com",
+        "expiry": 1759172345,
+        "httpOnly": true,
+        "name": "PortalLogin",
+        "path": "/",
+        "sameSite": "Lax",
+        "secure": true,
+        "value": "true"
+    },
+    {
+        "domain": ".quicksigorta.com",
+        "expiry": 1759172345,
+        "httpOnly": true,
+        "name": "RefreshToken",
+        "path": "/",
+        "sameSite": "Lax",
+        "secure": true,
+        "value": "eyJhbGciOiJIUzUxMiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIyMzg1OCIsImV4cCI6MTc1OTA4NTk0NCwiaXNzIjoicS1wb3J0YWwiLCJhdWQiOiJpZGVudGl0eSJ9.71q61_GW7P-6I9VyRZj4BKQDlkSddAlNCAnG8M74Ggyik-_xsQjwB1dcURvJ2Ea8A6YjB6YF_F4q-OOq4Cr9lQ"
+    }
+]

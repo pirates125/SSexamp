@@ -1,0 +1,80 @@
+[
+  {
+    "id": "1",
+    "username": "admin",
+    "password": "1234",
+    "email": "admin@esigorta.com",
+    "role": "admin",
+    "fullName": "Admin Kullanıcı",
+    "commission": 0,
+    "status": "active",
+    "createdAt": "2025-01-01T00:00:00.000Z",
+    "monthlyPolicies": 0,
+    "monthlyRevenue": 0
+  },
+  {
+    "id": "2",
+    "username": "sube",
+    "password": "1234",
+    "email": "sube@esigorta.com",
+    "role": "branch",
+    "fullName": "Şube Kullanıcısı",
+    "commission": 15,
+    "status": "active",
+    "createdAt": "2025-01-01T00:00:00.000Z",
+    "monthlyPolicies": 0,
+    "monthlyRevenue": 0
+  },
+  {
+    "id": "1760173287888",
+    "username": "dogac",
+    "password": "dogac",
+    "email": "dogac@gmail.com",
+    "role": "admin",
+    "fullName": "dogac",
+    "commission": 100,
+    "status": "active",
+    "createdAt": "2025-10-11T09:01:27.888Z",
+    "monthlyPolicies": 0,
+    "monthlyRevenue": 0
+  },
+  {
+    "id": "1760489086655",
+    "username": "ofistest",
+    "password": "123",
+    "email": "ofistest@gmail.com",
+    "role": "admin",
+    "fullName": "ofistest",
+    "commission": 100,
+    "status": "active",
+    "createdAt": "2025-10-15T00:44:46.655Z",
+    "monthlyPolicies": 0,
+    "monthlyRevenue": 0
+  },
+  {
+    "id": "1760489480716",
+    "username": "subetest",
+    "password": "sube",
+    "email": "subetest@gmail.com",
+    "role": "branch",
+    "fullName": "subetest",
+    "commission": 10,
+    "status": "active",
+    "createdAt": "2025-10-15T00:51:20.716Z",
+    "monthlyPolicies": 0,
+    "monthlyRevenue": 0
+  },
+  {
+    "id": "1760846092438",
+    "username": "asd",
+    "password": "asd",
+    "email": "asd@gmail.com",
+    "role": "user",
+    "fullName": "asd",
+    "commission": 0,
+    "status": "active",
+    "createdAt": "2025-10-19T03:54:52.438Z",
+    "monthlyPolicies": 0,
+    "monthlyRevenue": 0
+  }
+]
