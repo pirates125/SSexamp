@@ -1,0 +1,18 @@
+# Sompo Sigorta Environment Variables
+# Bu dosyayı gerçek değerlerle doldurun
+
+# Sompo Login Bilgileri
+SOMPO_URL=https://www.somposigorta.com.tr/agent/login
+SOMPO_USER=your_sompo_username
+SOMPO_PASS=your_sompo_password
+
+# Playwright Ayarları
+PLAYWRIGHT_HEADLESS=false  # Debug için false, production için true
+HTTP_PROXY=
+
+# Backend Ayarları
+FLASK_ENV=development
+FLASK_DEBUG=true
+
+# Database
+DATABASE_URL=sqlite:///app.db
