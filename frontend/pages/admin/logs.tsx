@@ -348,10 +348,7 @@ export default function LogsPage() {
                   </TableRow>
                 ) : filteredLogs.length === 0 ? (
                   <TableRow>
-                    <td
-                      colSpan={5}
-                      className="text-center py-8 text-gray-500"
-                    >
+                    <td colSpan={5} className="text-center py-8 text-gray-500">
                       Log bulunamadı
                     </td>
                   </TableRow>
