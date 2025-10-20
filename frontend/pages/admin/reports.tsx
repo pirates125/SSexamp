@@ -40,41 +40,88 @@ export default function ReportsPage() {
   });
 
   useEffect(() => {
-    // Gerçek istatistikleri backend'den çek
+    // Gerçek istatistikleri poliçe verilerinden çek
     const fetchStats = async () => {
       try {
-        const response = await fetch("/api/admin/stats");
+        const response = await fetch("/api/policies");
 
         if (!response.ok) {
           throw new Error(`HTTP error! status: ${response.status}`);
         }
 
-        const contentType = response.headers.get("content-type");
-        if (!contentType || !contentType.includes("application/json")) {
-          throw new Error("Response is not JSON");
-        }
-
         const data = await response.json();
+        const policies = data.policies || [];
+
+        // Gerçek verilerden istatistikleri hesapla
+        const totalRevenue = policies.reduce(
+          (sum: number, policy: any) => sum + policy.amount,
+          0
+        );
+        const totalPolicies = policies.length;
+        const totalCommission = Math.round(totalRevenue * 0.1); // %10 komisyon
+        const avgPolicy =
+          totalPolicies > 0 ? Math.round(totalRevenue / totalPolicies) : 0;
+
+        // Trend hesaplama (son 30 gün vs önceki 30 gün)
+        const now = new Date();
+        const thirtyDaysAgo = new Date(
+          now.getTime() - 30 * 24 * 60 * 60 * 1000
+        );
+        const sixtyDaysAgo = new Date(now.getTime() - 60 * 24 * 60 * 60 * 1000);
+
+        const recentPolicies = policies.filter(
+          (policy: any) => new Date(policy.createdAt) >= thirtyDaysAgo
+        );
+        const previousPolicies = policies.filter(
+          (policy: any) =>
+            new Date(policy.createdAt) >= sixtyDaysAgo &&
+            new Date(policy.createdAt) < thirtyDaysAgo
+        );
+
+        const recentRevenue = recentPolicies.reduce(
+          (sum: number, policy: any) => sum + policy.amount,
+          0
+        );
+        const previousRevenue = previousPolicies.reduce(
+          (sum: number, policy: any) => sum + policy.amount,
+          0
+        );
+
+        const recentCount = recentPolicies.length;
+        const previousCount = previousPolicies.length;
+
+        const revenueTrend =
+          previousRevenue > 0
+            ? ((recentRevenue - previousRevenue) / previousRevenue) * 100
+            : 0;
+        const policyTrend =
+          previousCount > 0
+            ? ((recentCount - previousCount) / previousCount) * 100
+            : 0;
+        const commissionTrend =
+          previousRevenue > 0
+            ? ((recentRevenue * 0.1 - previousRevenue * 0.1) /
+                (previousRevenue * 0.1)) *
+              100
+            : 0;
 
         setStats({
-          totalRevenue: data.total_premium || 0,
-          totalPolicies: data.total_policy || 0,
-          totalCommission: data.total_commission || 0,
-          avgPolicy: data.total_policy
-            ? Math.round((data.total_premium || 0) / data.total_policy)
-            : 0,
+          totalRevenue,
+          totalPolicies,
+          totalCommission,
+          avgPolicy,
           trends: {
             revenue: {
-              value: `${(data.revenue_trend || 0).toFixed(1)}%`,
-              isPositive: (data.revenue_trend || 0) >= 0,
+              value: `${Math.round(revenueTrend)}%`,
+              isPositive: revenueTrend >= 0,
             },
             policies: {
-              value: `${(data.policy_trend || 0).toFixed(1)}%`,
-              isPositive: (data.policy_trend || 0) >= 0,
+              value: `${Math.round(policyTrend)}%`,
+              isPositive: policyTrend >= 0,
             },
             commission: {
-              value: `${(data.commission_trend || 0).toFixed(1)}%`,
-              isPositive: (data.commission_trend || 0) >= 0,
+              value: `${Math.round(commissionTrend)}%`,
+              isPositive: commissionTrend >= 0,
             },
           },
         });
@@ -99,7 +146,7 @@ export default function ReportsPage() {
       id: "commission",
       name: "Komisyon Raporu",
       icon: TrendingUp,
-      count: Math.round((stats.totalCommission / stats.totalRevenue) * 100),
+      count: stats.totalCommission,
     },
     {
       id: "user",
@@ -111,7 +158,10 @@ export default function ReportsPage() {
       id: "company",
       name: "Şirket Bazlı",
       icon: FileText,
-      count: Math.round(stats.totalRevenue / stats.totalPolicies),
+      count:
+        stats.totalPolicies > 0
+          ? Math.round(stats.totalRevenue / stats.totalPolicies)
+          : 0,
     },
   ];
 
@@ -205,6 +255,42 @@ export default function ReportsPage() {
     }
   };
 
+  const handleDownloadReport = async (reportType: string) => {
+    try {
+      const format = reportType === "PDF" ? "pdf" : "excel";
+      const response = await fetch("/api/admin/reports/export", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          format: format,
+          period: "month",
+          type: "all",
+        }),
+      });
+
+      if (response.ok) {
+        const blob = await response.blob();
+        const url = window.URL.createObjectURL(blob);
+        const a = document.createElement("a");
+        a.href = url;
+        a.download = `report-${new Date().toISOString().split("T")[0]}.${
+          format === "pdf" ? "pdf" : "csv"
+        }`;
+        document.body.appendChild(a);
+        a.click();
+        window.URL.revokeObjectURL(url);
+        document.body.removeChild(a);
+      } else {
+        throw new Error("Rapor indirme başarısız");
+      }
+    } catch (error) {
+      console.error("Rapor indirme hatası:", error);
+      alert("Rapor indirme sırasında bir hata oluştu");
+    }
+  };
+
   return (
     <ProfessionalLayout>
       <div className="max-w-7xl mx-auto space-y-6">
@@ -288,7 +374,7 @@ export default function ReportsPage() {
                 </select>
               </div>
               <div className="flex items-end">
-                <Button className="w-full">
+                <Button className="w-full" onClick={handleExportPDF}>
                   <BarChart3 size={16} />
                   Rapor Oluştur
                 </Button>
@@ -406,7 +492,7 @@ export default function ReportsPage() {
                   <Button
                     variant="outline"
                     size="sm"
-                    onClick={() => window.open(report.downloadUrl, "_blank")}
+                    onClick={() => handleDownloadReport(report.type)}
                   >
                     <Download size={16} />
                     İndir

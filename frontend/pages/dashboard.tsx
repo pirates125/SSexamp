@@ -22,6 +22,20 @@ import {
   Clock,
 } from "lucide-react";
 import Image from "next/image";
+import {
+  LineChart,
+  Line,
+  AreaChart,
+  Area,
+  XAxis,
+  YAxis,
+  CartesianGrid,
+  Tooltip,
+  ResponsiveContainer,
+  PieChart,
+  Pie,
+  Cell,
+} from "recharts";
 
 export default function DashboardPage() {
   const { user } = useContext(AuthContext);
@@ -43,27 +57,127 @@ export default function DashboardPage() {
   const [companies, setCompanies] = useState<any[]>([]);
   const [activities, setActivities] = useState<any[]>([]);
   const [offers, setOffers] = useState<any[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+
+  // Grafik verileri
+  const [salesTrendData, setSalesTrendData] = useState([
+    { month: "Ocak", amount: 2400000, policies: 45 },
+    { month: "Şubat", amount: 2800000, policies: 52 },
+    { month: "Mart", amount: 3200000, policies: 61 },
+    { month: "Nisan", amount: 2900000, policies: 55 },
+    { month: "Mayıs", amount: 3500000, policies: 68 },
+    { month: "Haziran", amount: 3100000, policies: 59 },
+  ]);
+
+  const [categoryData, setCategoryData] = useState([
+    { name: "Trafik", value: 45, amount: 1800000, color: "#3B82F6" },
+    { name: "Kasko", value: 30, amount: 2400000, color: "#10B981" },
+    { name: "Konut", value: 15, amount: 900000, color: "#F59E0B" },
+    { name: "Sağlık", value: 10, amount: 600000, color: "#EF4444" },
+  ]);
+
+  // Filtre fonksiyonları
+  const filterPoliciesByTime = (policies: any[]) => {
+    const now = new Date();
+
+    switch (timeFilter) {
+      case "today":
+        return policies.filter((policy) => {
+          const policyDate = new Date(policy.createdAt);
+          return policyDate.toDateString() === now.toDateString();
+        });
+
+      case "week":
+        const weekAgo = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
+        return policies.filter((policy) => {
+          const policyDate = new Date(policy.createdAt);
+          return policyDate >= weekAgo;
+        });
+
+      case "custom":
+        if (dateRange.start && dateRange.end) {
+          const startDate = new Date(dateRange.start);
+          const endDate = new Date(dateRange.end);
+          return policies.filter((policy) => {
+            const policyDate = new Date(policy.createdAt);
+            return policyDate >= startDate && policyDate <= endDate;
+          });
+        }
+        return policies;
+
+      default:
+        return policies;
+    }
+  };
 
   // --- İstatistikleri çek ---
   useEffect(() => {
     const fetchDashboard = async () => {
       try {
-        const data = await apiService.getDashboard();
-        setStats({
-          totalRevenue: data.totalRevenue || 0,
-          totalPolicies: data.police_sayisi || 0,
-          totalCommission: data.totalCommission || 0,
-          avgPolicy: data.avgPolicy || 0,
-          businessHours: data.businessHours || false,
-          currentTime: data.currentTime || "",
-          quickSmsAvailable: data.quickSmsAvailable || false,
-        });
+        // Gerçek poliçe verilerini çek
+        const [policiesResponse, companiesResponse, activitiesResponse] =
+          await Promise.all([
+            fetch("/api/policies"),
+            fetch("/api/admin/companies"),
+            fetch("/api/admin/activities"),
+          ]);
+
+        if (policiesResponse.ok) {
+          const policiesData = await policiesResponse.json();
+          const allPolicies = policiesData.policies || [];
+
+          // Filtre uygula
+          const filteredPolicies = filterPoliciesByTime(allPolicies);
+
+          // Filtrelenmiş verilerden istatistikleri hesapla
+          const totalRevenue = filteredPolicies.reduce(
+            (sum: number, policy: any) => sum + policy.amount,
+            0
+          );
+          const totalPolicies = filteredPolicies.length;
+          const totalCommission = Math.round(totalRevenue * 0.1); // %10 komisyon
+          const avgPolicy =
+            totalPolicies > 0 ? Math.round(totalRevenue / totalPolicies) : 0;
+
+          setStats({
+            totalRevenue,
+            totalPolicies,
+            totalCommission,
+            avgPolicy,
+            businessHours: true,
+            currentTime: new Date().toLocaleTimeString("tr-TR"),
+            quickSmsAvailable: true,
+          });
+
+          // Grafik verilerini filtrelenmiş verilerle güncelle
+          updateChartData(filteredPolicies);
+        }
+
+        if (companiesResponse.ok) {
+          const companiesData = await companiesResponse.json();
+          setCompanies(companiesData.companies || []);
+        }
+
+        if (activitiesResponse.ok) {
+          const activitiesData = await activitiesResponse.json();
+          setActivities(activitiesData.activities || []);
+        }
       } catch (error) {
-        console.error("Dashboard verisi alınamadı:", error);
+        console.error("Dashboard verileri alınırken hata:", error);
+      } finally {
+        setIsLoading(false);
       }
     };
+
     fetchDashboard();
-  }, [timeFilter, dateRange]);
+
+    // Her 30 saniyede bir güncelle (sadece production'da)
+    const interval = setInterval(
+      fetchDashboard,
+      process.env.NODE_ENV === "production" ? 30000 : 60000
+    );
+    return () => clearInterval(interval);
+  }, [timeFilter, dateRange.start, dateRange.end]);
 
   // --- Teklifleri çek ---
   useEffect(() => {
@@ -158,16 +272,109 @@ export default function DashboardPage() {
       );
   }, []);
 
+  // Grafik verilerini güncelle
+  const updateChartData = (policies: any[]) => {
+    // Aylık satış trendi hesapla
+    const monthlyData: { [key: string]: { amount: number; policies: number } } =
+      {};
+
+    policies.forEach((policy) => {
+      const date = new Date(policy.createdAt);
+      const monthKey = date.toLocaleDateString("tr-TR", {
+        month: "long",
+        year: "numeric",
+      });
+
+      if (!monthlyData[monthKey]) {
+        monthlyData[monthKey] = { amount: 0, policies: 0 };
+      }
+
+      monthlyData[monthKey].amount += policy.amount;
+      monthlyData[monthKey].policies += 1;
+    });
+
+    // Son 6 ayı al
+    const months = Object.keys(monthlyData).slice(-6);
+    const salesTrendData = months.map((month) => ({
+      month: month.split(" ")[0], // Sadece ay adı
+      amount: monthlyData[month].amount,
+      policies: monthlyData[month].policies,
+    }));
+
+    setSalesTrendData(salesTrendData);
+
+    // Kategori dağılımını hesapla
+    const categoryStats: { [key: string]: { count: number; amount: number } } =
+      {};
+
+    policies.forEach((policy) => {
+      if (!categoryStats[policy.policyType]) {
+        categoryStats[policy.policyType] = { count: 0, amount: 0 };
+      }
+
+      categoryStats[policy.policyType].count += 1;
+      categoryStats[policy.policyType].amount += policy.amount;
+    });
+
+    const totalPolicies = policies.length;
+    const categoryData = Object.entries(categoryStats).map(([type, stats]) => ({
+      name: type.charAt(0).toUpperCase() + type.slice(1),
+      value: stats.count,
+      amount: stats.amount,
+      percentage:
+        totalPolicies > 0 ? Math.round((stats.count / totalPolicies) * 100) : 0,
+      color: getCategoryColor(type),
+    }));
+
+    setCategoryData(categoryData);
+  };
+
+  // Kategori rengi belirle
+  const getCategoryColor = (type: string) => {
+    const colors: { [key: string]: string } = {
+      trafik: "#3B82F6",
+      kasko: "#10B981",
+      konut: "#F59E0B",
+      saglik: "#EF4444",
+    };
+    return colors[type] || "#6B7280";
+  };
+
   // --- Son Aktiviteleri dinamik çek ---
   useEffect(() => {
-    const fetchActivities = () => {
-      fetch("/api/admin/activities")
-        .then((res) => res.json())
-        .then((data) => setActivities(data))
-        .catch(() => setActivities([]));
+    const fetchActivities = async () => {
+      try {
+        // Admin activities API'sini kullan
+        const response = await fetch("/api/admin/activities");
+        if (response.ok) {
+          const activitiesData = await response.json();
+          setActivities(activitiesData || []);
+        } else {
+          // Fallback: mock aktiviteler
+          setActivities([
+            {
+              id: "1",
+              type: "Trafik Teklifi",
+              company: "Anadolu Sigorta",
+              user: "Ahmet Yılmaz",
+              price: 2500,
+              plate: "34ABC123",
+              time: new Date().toISOString(),
+              status: "success",
+            },
+          ]);
+        }
+      } catch (error) {
+        console.error("Aktiviteler alınırken hata:", error);
+        setActivities([]);
+      }
     };
+
     fetchActivities();
-    const interval = setInterval(fetchActivities, 15000); // 15 saniyede bir yenile
+    const interval = setInterval(
+      fetchActivities,
+      process.env.NODE_ENV === "production" ? 15000 : 30000
+    );
     return () => clearInterval(interval);
   }, []);
 
@@ -237,9 +444,14 @@ export default function DashboardPage() {
             <Button
               size="sm"
               variant={timeFilter === "today" ? "primary" : "outline"}
-              onClick={() => setTimeFilter("today")}
-              className={`!text-gray-800 ${
-                timeFilter === "today" ? "text-white" : ""
+              onClick={() => {
+                setTimeFilter("today");
+                setDateRange({ start: "", end: "" }); // Reset custom date range
+              }}
+              className={`transition-all duration-200 ${
+                timeFilter === "today"
+                  ? "bg-primary text-primary-foreground shadow-md"
+                  : "bg-background text-foreground hover:bg-accent"
               }`}
             >
               Bugün
@@ -247,9 +459,14 @@ export default function DashboardPage() {
             <Button
               size="sm"
               variant={timeFilter === "week" ? "primary" : "outline"}
-              onClick={() => setTimeFilter("week")}
-              className={`!text-gray-800 ${
-                timeFilter === "week" ? "text-white" : ""
+              onClick={() => {
+                setTimeFilter("week");
+                setDateRange({ start: "", end: "" }); // Reset custom date range
+              }}
+              className={`transition-all duration-200 ${
+                timeFilter === "week"
+                  ? "bg-primary text-primary-foreground shadow-md"
+                  : "bg-background text-foreground hover:bg-accent"
               }`}
             >
               Bu Hafta
@@ -257,18 +474,26 @@ export default function DashboardPage() {
             <input
               type="date"
               value={dateRange.start}
-              onChange={(e) =>
-                setDateRange({ ...dateRange, start: e.target.value })
-              }
-              className="border border-blue-400 text-gray-800 bg-white focus:ring focus:ring-blue-200 rounded-md px-2 py-1 text-sm"
+              onChange={(e) => {
+                setDateRange({ ...dateRange, start: e.target.value });
+                if (e.target.value && dateRange.end) {
+                  setTimeFilter("custom");
+                }
+              }}
+              className="border border-border text-foreground bg-background focus:ring-2 focus:ring-primary rounded-md px-2 py-1 text-sm"
+              placeholder="Başlangıç tarihi"
             />
             <input
               type="date"
               value={dateRange.end}
-              onChange={(e) =>
-                setDateRange({ ...dateRange, end: e.target.value })
-              }
-              className="border border-blue-400 text-gray-800 bg-white focus:ring focus:ring-blue-200 rounded-md px-2 py-1 text-sm"
+              onChange={(e) => {
+                setDateRange({ ...dateRange, end: e.target.value });
+                if (dateRange.start && e.target.value) {
+                  setTimeFilter("custom");
+                }
+              }}
+              className="border border-border text-foreground bg-background focus:ring-2 focus:ring-primary rounded-md px-2 py-1 text-sm"
+              placeholder="Bitiş tarihi"
             />
           </div>
         </div>
@@ -511,6 +736,105 @@ export default function DashboardPage() {
                     </div>
                   ))
                 )}
+              </div>
+            </CardContent>
+          </Card>
+        </div>
+
+        {/* Grafikler */}
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+          {/* Aylık Satış Trendi */}
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <TrendingUp size={20} />
+                Aylık Satış Trendi
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <ResponsiveContainer width="100%" height={300}>
+                <AreaChart data={salesTrendData}>
+                  <CartesianGrid strokeDasharray="3 3" />
+                  <XAxis dataKey="month" />
+                  <YAxis />
+                  <Tooltip
+                    formatter={(value, name) => [
+                      `${value.toLocaleString("tr-TR")} ₺`,
+                      name === "amount" ? "Satış Tutarı" : "Poliçe Sayısı",
+                    ]}
+                  />
+                  <Area
+                    type="monotone"
+                    dataKey="amount"
+                    stroke="#3B82F6"
+                    fill="#3B82F6"
+                    fillOpacity={0.3}
+                  />
+                </AreaChart>
+              </ResponsiveContainer>
+            </CardContent>
+          </Card>
+
+          {/* Kategori Dağılımı */}
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <BarChart3 size={20} />
+                Kategori Dağılımı
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <ResponsiveContainer width="100%" height={300}>
+                <PieChart>
+                  <Pie
+                    data={categoryData}
+                    cx="50%"
+                    cy="50%"
+                    labelLine={false}
+                    label={({ name, percentage }) => `${name} ${percentage}%`}
+                    outerRadius={80}
+                    fill="#8884d8"
+                    dataKey="value"
+                  >
+                    {categoryData.map((entry, index) => (
+                      <Cell key={`cell-${index}`} fill={entry.color} />
+                    ))}
+                  </Pie>
+                  <Tooltip
+                    formatter={(value, name, props) => [
+                      `${props.payload.amount.toLocaleString("tr-TR")} ₺`,
+                      "Tutar",
+                    ]}
+                  />
+                </PieChart>
+              </ResponsiveContainer>
+
+              {/* Kategori Detayları */}
+              <div className="mt-4 space-y-2">
+                {categoryData.map((category) => (
+                  <div
+                    key={category.name}
+                    className="flex items-center justify-between"
+                  >
+                    <div className="flex items-center gap-2">
+                      <div
+                        className="w-3 h-3 rounded-full"
+                        style={{ backgroundColor: category.color }}
+                      ></div>
+                      <span className="text-sm font-medium">
+                        {category.name}
+                      </span>
+                    </div>
+                    <div className="text-right">
+                      <div className="text-sm font-semibold">
+                        {category.value} poliçe
+                      </div>
+                      <div className="text-xs text-muted-foreground">
+                        {category.amount.toLocaleString("tr-TR")} ₺
+                      </div>
+                    </div>
+                  </div>
+                ))}
               </div>
             </CardContent>
           </Card>

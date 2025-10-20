@@ -1,17 +1,21 @@
-import { useState } from "react";
+import { useState, useContext } from "react";
 import { useRouter } from "next/router";
 import ProfessionalLayout from "@/components/ProfessionalLayout";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/Card";
 import { Input } from "@/components/ui/Input";
 import { Button } from "@/components/ui/Button";
-import { Car, User, AlertCircle, CheckCircle } from "lucide-react";
+import { Car, User, AlertCircle, CheckCircle, CreditCard } from "lucide-react";
 import { apiService } from "@/services/api";
+import { AuthContext } from "@/context/AuthContext";
 
 export default function TrafikPage() {
   const router = useRouter();
+  const { user } = useContext(AuthContext);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
+  const [success, setSuccess] = useState("");
   const [useRealAPI, setUseRealAPI] = useState(false);
+  const [useScraper, setUseScraper] = useState(false);
   const [form, setForm] = useState({
     bireysel: true,
     tc: "",
@@ -27,6 +31,51 @@ export default function TrafikPage() {
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value, type, checked } = e.target;
     setForm({ ...form, [name]: type === "checkbox" ? checked : value });
+  };
+
+  const handleScraperSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setLoading(true);
+    setError("");
+    setSuccess("");
+
+    try {
+      // Backend scraper API'sine istek at
+      const response = await fetch(
+        "http://localhost:8000/api/scraper/trafik-quotes",
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            plaka: form.plaka,
+            tescilSeri: form.tescilSeri,
+            tescilNo: form.tescilNo,
+            modelYear: 2020, // Varsayılan
+            brand: "Toyota", // Varsayılan
+            model: "Corolla", // Varsayılan
+          }),
+        }
+      );
+
+      if (response.ok) {
+        const data = await response.json();
+        setSuccess(`✅ Scraper ile ${data.total_quotes} teklif bulundu!`);
+
+        // Başarılı olursa dashboard'a yönlendir
+        setTimeout(() => {
+          router.push("/dashboard");
+        }, 2000);
+      } else {
+        throw new Error("Scraper API hatası");
+      }
+    } catch (error) {
+      setError("Scraper ile teklif çekme sırasında bir hata oluştu");
+      console.error("Scraper hatası:", error);
+    } finally {
+      setLoading(false);
+    }
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -93,6 +142,64 @@ export default function TrafikPage() {
     }
   };
 
+  const handleCreatePolicy = async (company: string, amount: number) => {
+    if (!user) {
+      setError("Kullanıcı bilgisi bulunamadı");
+      return;
+    }
+
+    setLoading(true);
+    setError("");
+    setSuccess("");
+
+    try {
+      const response = await fetch("/api/policies", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          userId: user.id,
+          userName: user.username,
+          userRole: user.role,
+          policyType: "trafik",
+          company: company,
+          amount: amount,
+          customerInfo: {
+            name: `${form.ad} ${form.soyad}`,
+            tcKimlik: form.tc,
+            phone: form.cep,
+            email: form.email,
+            address: "Adres bilgisi",
+          },
+          policyDetails: {
+            plaka: form.plaka,
+            tescilSeri: form.tescilSeri,
+            tescilNo: form.tescilNo,
+            bireysel: form.bireysel,
+          },
+        }),
+      });
+
+      if (response.ok) {
+        const data = await response.json();
+        setSuccess(`Poliçe başarıyla kesildi! Poliçe No: ${data.policy.id}`);
+
+        // 3 saniye sonra dashboard'a yönlendir
+        setTimeout(() => {
+          router.push("/dashboard");
+        }, 3000);
+      } else {
+        throw new Error("Poliçe kesme başarısız");
+      }
+    } catch (error) {
+      setError("Poliçe kesme sırasında bir hata oluştu");
+      console.error("Poliçe kesme hatası:", error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
   return (
     <ProfessionalLayout>
       <div className="max-w-6xl mx-auto space-y-8">
@@ -106,18 +213,34 @@ export default function TrafikPage() {
                 Aracınız için en uygun trafik sigortası teklifini alın
               </p>
             </div>
-            <div className="flex items-center gap-3 bg-primary/10 px-4 py-2 rounded-lg">
-              <label className="flex items-center gap-2 cursor-pointer">
-                <input
-                  type="checkbox"
-                  checked={useRealAPI}
-                  onChange={(e) => setUseRealAPI(e.target.checked)}
-                  className="w-4 h-4 text-blue-600 focus:ring-blue-500 rounded"
-                />
-                <span className="text-sm font-medium text-gray-700">
-                  {useRealAPI ? "🚀 Gerçek API (Sompo)" : "🎭 Mock Data"}
-                </span>
-              </label>
+            <div className="flex items-center gap-4">
+              <div className="flex items-center gap-3 bg-primary/10 px-4 py-2 rounded-lg">
+                <label className="flex items-center gap-2 cursor-pointer">
+                  <input
+                    type="checkbox"
+                    checked={useRealAPI}
+                    onChange={(e) => setUseRealAPI(e.target.checked)}
+                    className="w-4 h-4 text-blue-600 focus:ring-blue-500 rounded"
+                  />
+                  <span className="text-sm font-medium text-gray-700">
+                    {useRealAPI ? "🚀 Gerçek API (Sompo)" : "🎭 Mock Data"}
+                  </span>
+                </label>
+              </div>
+
+              <div className="flex items-center gap-3 bg-green-50 px-4 py-2 rounded-lg border border-green-200">
+                <label className="flex items-center gap-2 cursor-pointer">
+                  <input
+                    type="checkbox"
+                    checked={useScraper}
+                    onChange={(e) => setUseScraper(e.target.checked)}
+                    className="w-4 h-4 text-green-600 focus:ring-green-500 rounded"
+                  />
+                  <span className="text-sm font-medium text-gray-700">
+                    {useScraper ? "🕷️ Web Scraper" : "📊 Normal API"}
+                  </span>
+                </label>
+              </div>
             </div>
           </div>
         </div>
@@ -155,7 +278,10 @@ export default function TrafikPage() {
           </Card>
         )}
 
-        <form onSubmit={handleSubmit} className="space-y-6">
+        <form
+          onSubmit={useScraper ? handleScraperSubmit : handleSubmit}
+          className="space-y-6"
+        >
           {/* Sigortalı Bilgileri */}
           <Card className="border border-border shadow-modern-md hover:shadow-modern-lg transition-all duration-300">
             <CardHeader className="bg-gradient-to-r from-blue-50 to-indigo-50 dark:from-blue-900/20 dark:to-indigo-900/20 border-b border-gray-200 dark:border-gray-700">

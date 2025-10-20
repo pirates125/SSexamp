@@ -182,8 +182,10 @@ export default function UserOperationsPage() {
                   <FileText className="text-blue-600" size={24} />
                 </div>
                 <div>
-                  <p className="text-sm text-gray-600">Toplam Poliçe</p>
-                  <p className="text-2xl font-bold text-gray-900">
+                  <p className="text-sm text-gray-600 dark:text-gray-400">
+                    Toplam Poliçe
+                  </p>
+                  <p className="text-2xl font-bold text-gray-900 dark:text-white">
                     {operations.length}
                   </p>
                 </div>
@@ -198,8 +200,10 @@ export default function UserOperationsPage() {
                   <DollarSign className="text-green-600" size={24} />
                 </div>
                 <div>
-                  <p className="text-sm text-gray-600">Toplam Tutar</p>
-                  <p className="text-2xl font-bold text-gray-900">
+                  <p className="text-sm text-gray-600 dark:text-gray-400">
+                    Toplam Tutar
+                  </p>
+                  <p className="text-2xl font-bold text-gray-900 dark:text-white">
                     {operations
                       .reduce((sum, op) => {
                         const tutar = parseFloat(
@@ -222,8 +226,10 @@ export default function UserOperationsPage() {
                   <User className="text-purple-600" size={24} />
                 </div>
                 <div>
-                  <p className="text-sm text-gray-600">Aktif Kullanıcı</p>
-                  <p className="text-2xl font-bold text-gray-900">
+                  <p className="text-sm text-gray-600 dark:text-gray-400">
+                    Aktif Kullanıcı
+                  </p>
+                  <p className="text-2xl font-bold text-gray-900 dark:text-white">
                     {users.length}
                   </p>
                 </div>
@@ -238,8 +244,10 @@ export default function UserOperationsPage() {
                   <Calendar className="text-orange-600" size={24} />
                 </div>
                 <div>
-                  <p className="text-sm text-gray-600">Bugün</p>
-                  <p className="text-2xl font-bold text-gray-900">
+                  <p className="text-sm text-gray-600 dark:text-gray-400">
+                    Bugün
+                  </p>
+                  <p className="text-2xl font-bold text-gray-900 dark:text-white">
                     {
                       operations.filter(
                         (op) =>
@@ -317,7 +325,16 @@ export default function UserOperationsPage() {
                   <TableRow key={op.id}>
                     <TableCell>
                       <div className="flex items-center gap-2">
-                        <User size={16} className="text-gray-500" />
+                        <div className="w-8 h-8 bg-gradient-to-br from-blue-500 to-blue-600 rounded-lg flex items-center justify-center shadow-sm">
+                          <span className="text-white text-xs font-bold">
+                            {op.user_name
+                              .split(" ")
+                              .map((n: string) => n[0])
+                              .join("")
+                              .toUpperCase()
+                              .slice(0, 2)}
+                          </span>
+                        </div>
                         <div>
                           <p className="font-medium text-gray-900">
                             {op.user_name}

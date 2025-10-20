@@ -1,4 +1,4 @@
-﻿import { useState, useEffect } from "react";
+﻿import { useState, useEffect, useContext } from "react";
 import { useRouter } from "next/router";
 import ProfessionalLayout from "@/components/ProfessionalLayout";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/Card";
@@ -22,9 +22,11 @@ import {
   CreditCard,
   Wallet,
   RefreshCw,
+  FileText,
 } from "lucide-react";
 import Image from "next/image";
 import { apiService } from "@/services/api";
+import { AuthContext } from "@/context/AuthContext";
 
 interface Quote {
   company: string;
@@ -41,8 +43,10 @@ interface Quote {
 
 export default function FiyatlarPage() {
   const router = useRouter();
+  const { user } = useContext(AuthContext);
   const [loading, setLoading] = useState(true);
   const [useRealAPI, setUseRealAPI] = useState(false);
+  const [useScraper, setUseScraper] = useState(false);
   const [paymentType, setPaymentType] = useState<"cash" | "installment">(
     "cash"
   );
@@ -137,31 +141,35 @@ export default function FiyatlarPage() {
           });
 
           // API'den gelen verileri işle
-          setQuotes((prev) =>
-            prev.map((q) => {
-              if (q.company === "Sompo Sigorta" && response.sompo) {
+          if (response.ok && response.teklifler) {
+            setQuotes((prev) =>
+              prev.map((q) => {
+                const teklif = response.teklifler.find((t: any) =>
+                  t.sirket.includes(q.company.split(" ")[0])
+                );
+                if (teklif && teklif.durum === "✅ Mevcut") {
+                  const fiyat = parseFloat(
+                    teklif.fiyat.replace(/[^\d,]/g, "").replace(",", ".")
+                  );
+                  return {
+                    ...q,
+                    status: "success",
+                    price: fiyat,
+                    priceInstallment: Math.floor(fiyat * 1.15),
+                    isRealData: true,
+                    discounts: ["Gerçek API Verisi"],
+                  };
+                }
                 return {
                   ...q,
-                  status: "success",
-                  price: response.sompo.fiyat,
-                  priceInstallment: Math.floor(response.sompo.fiyat * 1.15),
-                  isRealData: true,
-                  discounts: ["Gerçek API Verisi"],
+                  status: "error" as const,
+                  errorMessage: "Teklif alınamadı",
                 };
-              }
-              if (q.company === "Quick Sigorta" && response.quick) {
-                return {
-                  ...q,
-                  status: "success",
-                  price: response.quick.fiyat,
-                  priceInstallment: Math.floor(response.quick.fiyat * 1.15),
-                  isRealData: true,
-                  discounts: ["Gerçek API Verisi"],
-                };
-              }
-              return q;
-            })
-          );
+              })
+            );
+          } else {
+            throw new Error("API'den geçerli veri alınamadı");
+          }
         } catch (error) {
           console.error("API Error:", error);
           // Hata durumunda mock veriye geç
@@ -221,6 +229,99 @@ export default function FiyatlarPage() {
     return paymentType === "cash" ? quote.price : quote.priceInstallment;
   };
 
+  const handleDownloadPDF = async () => {
+    try {
+      // Teklif verilerini PDF formatında hazırla
+      const quoteData = {
+        type: router.query.type || "trafik",
+        quotes: successfulQuotes,
+        paymentType: paymentType,
+        generatedAt: new Date().toISOString(),
+        lowestPrice: lowestPrice,
+      };
+
+      const response = await fetch("/api/admin/reports/export", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          format: "pdf",
+          period: "today",
+          type: "quotes",
+          data: quoteData,
+        }),
+      });
+
+      if (response.ok) {
+        const blob = await response.blob();
+        const url = window.URL.createObjectURL(blob);
+        const a = document.createElement("a");
+        a.href = url;
+        a.download = `teklif-karsilastirma-${
+          new Date().toISOString().split("T")[0]
+        }.pdf`;
+        document.body.appendChild(a);
+        a.click();
+        window.URL.revokeObjectURL(url);
+        document.body.removeChild(a);
+      } else {
+        throw new Error("PDF indirme başarısız");
+      }
+    } catch (error) {
+      console.error("PDF indirme hatası:", error);
+      alert("PDF indirme sırasında bir hata oluştu");
+    }
+  };
+
+  const handleCreatePolicy = async (company: string, amount: number) => {
+    if (!user) {
+      alert("Kullanıcı bilgisi bulunamadı");
+      return;
+    }
+
+    try {
+      const response = await fetch("/api/policies", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          userId: user.id,
+          userName: user.username,
+          userRole: user.role,
+          policyType: router.query.type || "trafik",
+          company: company,
+          amount: amount,
+          customerInfo: {
+            name: "Müşteri Adı",
+            tcKimlik: "12345678901",
+            phone: "05551234567",
+            email: "musteri@example.com",
+            address: "Adres bilgisi",
+          },
+          policyDetails: {
+            plaka: router.query.plaka || "34ABC123",
+            // Diğer form verileri
+          },
+        }),
+      });
+
+      if (response.ok) {
+        const data = await response.json();
+        alert(`Poliçe başarıyla kesildi! Poliçe No: ${data.policy.id}`);
+
+        // Dashboard'a yönlendir
+        router.push("/dashboard");
+      } else {
+        throw new Error("Poliçe kesme başarısız");
+      }
+    } catch (error) {
+      alert("Poliçe kesme sırasında bir hata oluştu");
+      console.error("Poliçe kesme hatası:", error);
+    }
+  };
+
   return (
     <ProfessionalLayout>
       <div className="max-w-7xl mx-auto space-y-8">
@@ -242,12 +343,7 @@ export default function FiyatlarPage() {
             <Button
               variant="primary"
               disabled={successfulQuotes.length === 0}
-              onClick={() => {
-                if (successfulQuotes.length > 0) {
-                  // PDF indirme işlemi
-                  console.log("PDF indiriliyor...");
-                }
-              }}
+              onClick={handleDownloadPDF}
             >
               <Download size={18} />
               PDF İndir
@@ -572,22 +668,27 @@ export default function FiyatlarPage() {
                             </Button>
                             <Button
                               size="sm"
-                              disabled={!quote.isRealData}
+                              disabled={quote.status !== "success"}
                               onClick={() => {
-                                if (quote.isRealData) {
-                                  console.log(
-                                    `${quote.company} satın alma işlemi başlatılıyor...`
+                                if (
+                                  quote.status === "success" &&
+                                  currentPrice
+                                ) {
+                                  handleCreatePolicy(
+                                    quote.company,
+                                    currentPrice
                                   );
                                 }
                               }}
                             >
-                              Satın Al
-                              {quote.isRealData && (
+                              <FileText size={16} />
+                              Poliçe Kes
+                              {quote.status === "success" && (
                                 <Badge
                                   variant="success"
                                   className="ml-1 text-xs"
                                 >
-                                  Aktif
+                                  Hazır
                                 </Badge>
                               )}
                             </Button>

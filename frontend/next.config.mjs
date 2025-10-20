@@ -10,6 +10,8 @@ const nextConfig = {
     // 🚫 Build sırasında TypeScript hatalarını yoksay
     ignoreBuildErrors: true,
   },
+  // Pages dizinini src/pages olarak ayarla
+  pageExtensions: ["tsx", "ts", "jsx", "js"],
 };
 
 export default nextConfig;

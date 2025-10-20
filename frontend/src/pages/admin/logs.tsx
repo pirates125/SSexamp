@@ -5,8 +5,15 @@ import ProfessionalLayout from "@/components/ProfessionalLayout";
 import { Card, CardHeader, CardContent } from "@/components/ui/Card";
 import { Input } from "@/components/ui/Input";
 import { Badge } from "@/components/ui/Badge";
-import { Table, TableHeader, TableBody, TableRow, TableHead, TableCell } from "@/components/ui/Table";
-import { Search, Download } from "lucide-react";
+import {
+  Table,
+  TableHeader,
+  TableBody,
+  TableRow,
+  TableHead,
+  TableCell,
+} from "@/components/ui/Table";
+import { Search, Download, FileText, Database } from "lucide-react";
 import { Button } from "@/components/ui/Button";
 
 interface Log {
@@ -24,14 +31,70 @@ export default function LogsPage() {
   const [searchTerm, setSearchTerm] = useState("");
   const [filterLevel, setFilterLevel] = useState<string>("all");
   const [logs] = useState<Log[]>([
-    { id: "1", timestamp: "2024-03-15 16:45:23", level: "success", message: "Kasko teklifi başarıyla oluşturuldu", user: "sube", action: "CREATE_QUOTE" },
-    { id: "2", timestamp: "2024-03-15 16:40:11", level: "info", message: "Kullanıcı giriş yaptı", user: "admin", action: "LOGIN" },
-    { id: "3", timestamp: "2024-03-15 16:35:45", level: "warning", message: "API timeout - Sompo Sigorta", user: "system", action: "API_TIMEOUT" },
-    { id: "4", timestamp: "2024-03-15 16:30:22", level: "error", message: "Teklif oluşturma başarısız - Anadolu Sigorta", user: "sube", action: "QUOTE_FAILED" },
-    { id: "5", timestamp: "2024-03-15 16:25:10", level: "success", message: "Trafik teklifi başarıyla oluşturuldu", user: "sube", action: "CREATE_QUOTE" },
-    { id: "6", timestamp: "2024-03-15 16:20:33", level: "info", message: "Kullanıcı çıkış yaptı", user: "kullanici1", action: "LOGOUT" },
-    { id: "7", timestamp: "2024-03-15 16:15:55", level: "warning", message: "Yüksek API kullanımı tespit edildi", user: "system", action: "HIGH_USAGE" },
-    { id: "8", timestamp: "2024-03-15 16:10:18", level: "success", message: "Yeni kullanıcı oluşturuldu", user: "admin", action: "CREATE_USER" },
+    {
+      id: "1",
+      timestamp: "2024-03-15 16:45:23",
+      level: "success",
+      message: "Kasko teklifi başarıyla oluşturuldu",
+      user: "sube",
+      action: "CREATE_QUOTE",
+    },
+    {
+      id: "2",
+      timestamp: "2024-03-15 16:40:11",
+      level: "info",
+      message: "Kullanıcı giriş yaptı",
+      user: "admin",
+      action: "LOGIN",
+    },
+    {
+      id: "3",
+      timestamp: "2024-03-15 16:35:45",
+      level: "warning",
+      message: "API timeout - Sompo Sigorta",
+      user: "system",
+      action: "API_TIMEOUT",
+    },
+    {
+      id: "4",
+      timestamp: "2024-03-15 16:30:22",
+      level: "error",
+      message: "Teklif oluşturma başarısız - Anadolu Sigorta",
+      user: "sube",
+      action: "QUOTE_FAILED",
+    },
+    {
+      id: "5",
+      timestamp: "2024-03-15 16:25:10",
+      level: "success",
+      message: "Trafik teklifi başarıyla oluşturuldu",
+      user: "sube",
+      action: "CREATE_QUOTE",
+    },
+    {
+      id: "6",
+      timestamp: "2024-03-15 16:20:33",
+      level: "info",
+      message: "Kullanıcı çıkış yaptı",
+      user: "kullanici1",
+      action: "LOGOUT",
+    },
+    {
+      id: "7",
+      timestamp: "2024-03-15 16:15:55",
+      level: "warning",
+      message: "Yüksek API kullanımı tespit edildi",
+      user: "system",
+      action: "HIGH_USAGE",
+    },
+    {
+      id: "8",
+      timestamp: "2024-03-15 16:10:18",
+      level: "success",
+      message: "Yeni kullanıcı oluşturuldu",
+      user: "admin",
+      action: "CREATE_USER",
+    },
   ]);
 
   useEffect(() => {
@@ -41,8 +104,9 @@ export default function LogsPage() {
   }, [user, isLoading, router]);
 
   const filteredLogs = logs.filter((log) => {
-    const matchesSearch = log.message.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                         log.user.toLowerCase().includes(searchTerm.toLowerCase());
+    const matchesSearch =
+      log.message.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      log.user.toLowerCase().includes(searchTerm.toLowerCase());
     const matchesLevel = filterLevel === "all" || log.level === filterLevel;
     return matchesSearch && matchesLevel;
   });
@@ -50,35 +114,117 @@ export default function LogsPage() {
   const getLevelBadge = (level: Log["level"]) => {
     switch (level) {
       case "success":
-          return <Badge variant="success">Başarılı</Badge>;
+        return <Badge variant="success">Başarılı</Badge>;
       case "info":
         return <Badge variant="info">Bilgi</Badge>;
       case "warning":
-          return <Badge variant="warning">Uyarı</Badge>;
+        return <Badge variant="warning">Uyarı</Badge>;
       case "error":
         return <Badge variant="danger">Hata</Badge>;
     }
   };
 
+  const exportToCSV = () => {
+    const csvContent = [
+      // CSV başlıkları
+      "Zaman,Seviye,Mesaj,Kullanıcı,Aksiyon",
+      // Veriler
+      ...filteredLogs.map(
+        (log) =>
+          `"${log.timestamp}","${log.level}","${log.message}","${log.user}","${log.action}"`
+      ),
+    ].join("\n");
+
+    const blob = new Blob([csvContent], { type: "text/csv;charset=utf-8;" });
+    const link = document.createElement("a");
+    const url = URL.createObjectURL(blob);
+    link.setAttribute("href", url);
+    link.setAttribute(
+      "download",
+      `logs-${new Date().toISOString().split("T")[0]}.csv`
+    );
+    link.style.visibility = "hidden";
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+  };
+
+  const exportToJSON = () => {
+    const jsonContent = JSON.stringify(filteredLogs, null, 2);
+    const blob = new Blob([jsonContent], {
+      type: "application/json;charset=utf-8;",
+    });
+    const link = document.createElement("a");
+    const url = URL.createObjectURL(blob);
+    link.setAttribute("href", url);
+    link.setAttribute(
+      "download",
+      `logs-${new Date().toISOString().split("T")[0]}.json`
+    );
+    link.style.visibility = "hidden";
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+  };
+
+  const exportToTXT = () => {
+    const txtContent = filteredLogs
+      .map(
+        (log) =>
+          `[${log.timestamp}] ${log.level.toUpperCase()}: ${
+            log.message
+          } (Kullanıcı: ${log.user}, Aksiyon: ${log.action})`
+      )
+      .join("\n");
+
+    const blob = new Blob([txtContent], { type: "text/plain;charset=utf-8;" });
+    const link = document.createElement("a");
+    const url = URL.createObjectURL(blob);
+    link.setAttribute("href", url);
+    link.setAttribute(
+      "download",
+      `logs-${new Date().toISOString().split("T")[0]}.txt`
+    );
+    link.style.visibility = "hidden";
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+  };
+
   return (
-  <ProfessionalLayout>
+    <ProfessionalLayout>
       <div className="max-w-7xl mx-auto">
         <div className="flex items-center justify-between mb-6">
           <div>
             <h1 className="text-3xl font-bold text-gray-900">Sistem Logları</h1>
-            <p className="text-gray-600 mt-1">Sistem aktivitelerini takip edin</p>
+            <p className="text-gray-600 mt-1">
+              Sistem aktivitelerini takip edin
+            </p>
           </div>
-          <Button>
-            <Download size={18} />
-              Logları İndir
-          </Button>
+          <div className="flex gap-2">
+            <Button variant="outline" onClick={exportToCSV}>
+              <FileText size={16} />
+              CSV
+            </Button>
+            <Button variant="outline" onClick={exportToJSON}>
+              <Database size={16} />
+              JSON
+            </Button>
+            <Button variant="outline" onClick={exportToTXT}>
+              <Download size={16} />
+              TXT
+            </Button>
+          </div>
         </div>
 
         <Card>
           <CardHeader>
             <div className="flex items-center gap-4">
               <div className="flex-1 relative">
-                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" size={18} />
+                <Search
+                  className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400"
+                  size={18}
+                />
                 <Input
                   placeholder="Log ara..."
                   value={searchTerm}
@@ -113,12 +259,16 @@ export default function LogsPage() {
               <TableBody>
                 {filteredLogs.map((log) => (
                   <TableRow key={log.id}>
-                    <TableCell className="font-mono text-xs">{log.timestamp}</TableCell>
+                    <TableCell className="font-mono text-xs">
+                      {log.timestamp}
+                    </TableCell>
                     <TableCell>{getLevelBadge(log.level)}</TableCell>
                     <TableCell className="max-w-md">{log.message}</TableCell>
                     <TableCell className="font-medium">{log.user}</TableCell>
                     <TableCell>
-                      <code className="text-xs bg-gray-100 px-2 py-1 rounded">{log.action}</code>
+                      <code className="text-xs bg-gray-100 px-2 py-1 rounded">
+                        {log.action}
+                      </code>
                     </TableCell>
                   </TableRow>
                 ))}
@@ -127,8 +277,6 @@ export default function LogsPage() {
           </CardContent>
         </Card>
       </div>
-  </ProfessionalLayout>
+    </ProfessionalLayout>
   );
 }
-
-
