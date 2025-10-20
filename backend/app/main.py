@@ -1,9 +1,15 @@
 from flask import Flask, request, jsonify, send_from_directory
 from flask_cors import CORS
 import os
+import asyncio
+import sys
 from .store import db
 from .adapters import mock_quick, mock_sompo
 from .services.policy_service import create_policy
+
+# Scraper import
+sys.path.append(os.path.join(os.path.dirname(__file__), '..'))
+from scrapers.insurance_scraper import InsuranceScraper
 
 app = Flask(__name__)
 CORS(app)
@@ -272,6 +278,279 @@ def get_policy_pdf(pid):
 @app.route("/api/tamamlayici-saglik", methods=["POST"])
 def tamamlayici_saglik():
     return jsonify({"ok": True, "message": "Yakında aktif olacak", "price": "Yakında"})
+
+# ========== WEB SCRAPER ENDPOINTS ==========
+
+@app.route("/api/scraper/trafik-quotes", methods=["POST"])
+def get_trafik_quotes():
+    """Web scraper ile trafik sigortası tekliflerini çek"""
+    try:
+        data = request.json
+        vehicle_data = {
+            "plaka": data.get("plaka", "34ABC123"),
+            "tescil_seri": data.get("tescilSeri", "A"),
+            "tescil_no": data.get("tescilNo", "123456"),
+            "model_year": data.get("modelYear", 2020),
+            "brand": data.get("brand", "Toyota"),
+            "model": data.get("model", "Corolla")
+        }
+        
+        # Async scraper çalıştır
+        async def run_scraper():
+            async with InsuranceScraper() as scraper:
+                quotes = await scraper.scrape_trafik_quotes(vehicle_data)
+                return quotes
+        
+        # Event loop oluştur ve çalıştır
+        loop = asyncio.new_event_loop()
+        asyncio.set_event_loop(loop)
+        quotes = loop.run_until_complete(run_scraper())
+        loop.close()
+        
+        # Sonuçları formatla
+        formatted_quotes = []
+        for quote in quotes:
+            formatted_quotes.append({
+                "company": quote.company,
+                "amount": quote.amount,
+                "currency": quote.currency,
+                "valid_until": quote.valid_until,
+                "coverage_details": quote.coverage_details,
+                "scraped_at": quote.scraped_at
+            })
+        
+        return jsonify({
+            "success": True,
+            "quotes": formatted_quotes,
+            "total_quotes": len(formatted_quotes),
+            "scraped_at": asyncio.get_event_loop().time() if asyncio.get_event_loop().is_running() else None
+        })
+        
+    except Exception as e:
+        return jsonify({
+            "success": False,
+            "error": str(e),
+            "message": "Teklifler çekilirken hata oluştu"
+        }), 500
+
+@app.route("/api/scraper/kasko-quotes", methods=["POST"])
+def get_kasko_quotes():
+    """Web scraper ile kasko sigortası tekliflerini çek"""
+    try:
+        data = request.json
+        vehicle_data = {
+            "plaka": data.get("plaka", "34ABC123"),
+            "tescil_seri": data.get("tescilSeri", "A"),
+            "tescil_no": data.get("tescilNo", "123456"),
+            "model_year": data.get("modelYear", 2020),
+            "brand": data.get("brand", "Toyota"),
+            "model": data.get("model", "Corolla")
+        }
+        
+        # Async scraper çalıştır
+        async def run_scraper():
+            async with InsuranceScraper() as scraper:
+                quotes = await scraper.scrape_kasko_quotes(vehicle_data)
+                return quotes
+        
+        # Event loop oluştur ve çalıştır
+        loop = asyncio.new_event_loop()
+        asyncio.set_event_loop(loop)
+        quotes = loop.run_until_complete(run_scraper())
+        loop.close()
+        
+        # Sonuçları formatla
+        formatted_quotes = []
+        for quote in quotes:
+            formatted_quotes.append({
+                "company": quote.company,
+                "amount": quote.amount,
+                "currency": quote.currency,
+                "valid_until": quote.valid_until,
+                "coverage_details": quote.coverage_details,
+                "scraped_at": quote.scraped_at
+            })
+        
+        return jsonify({
+            "success": True,
+            "quotes": formatted_quotes,
+            "total_quotes": len(formatted_quotes),
+            "scraped_at": asyncio.get_event_loop().time() if asyncio.get_event_loop().is_running() else None
+        })
+        
+    except Exception as e:
+        return jsonify({
+            "success": False,
+            "error": str(e),
+            "message": "Teklifler çekilirken hata oluştu"
+        }), 500
+
+@app.route("/api/scraper/konut-quotes", methods=["POST"])
+def get_konut_quotes():
+    """Web scraper ile konut sigortası tekliflerini çek"""
+    try:
+        data = request.json
+        property_data = {
+            "address": data.get("address", "İstanbul"),
+            "building_type": data.get("buildingType", "apartment"),
+            "construction_year": data.get("constructionYear", 2010),
+            "area": data.get("area", 100),
+            "floor": data.get("floor", 1)
+        }
+        
+        # Async scraper çalıştır
+        async def run_scraper():
+            async with InsuranceScraper() as scraper:
+                quotes = await scraper._scrape_general_quotes(property_data, "konut")
+                return quotes
+        
+        # Event loop oluştur ve çalıştır
+        loop = asyncio.new_event_loop()
+        asyncio.set_event_loop(loop)
+        quotes = loop.run_until_complete(run_scraper())
+        loop.close()
+        
+        # Sonuçları formatla
+        formatted_quotes = []
+        for quote in quotes:
+            formatted_quotes.append({
+                "company": quote.company,
+                "amount": quote.amount,
+                "currency": quote.currency,
+                "valid_until": quote.valid_until,
+                "coverage_details": quote.coverage_details,
+                "scraped_at": quote.scraped_at
+            })
+        
+        return jsonify({
+            "success": True,
+            "quotes": formatted_quotes,
+            "total_quotes": len(formatted_quotes),
+            "scraped_at": asyncio.get_event_loop().time() if asyncio.get_event_loop().is_running() else None
+        })
+        
+    except Exception as e:
+        return jsonify({
+            "success": False,
+            "error": str(e),
+            "message": "Konut teklifleri çekilirken hata oluştu"
+        }), 500
+
+@app.route("/api/scraper/saglik-quotes", methods=["POST"])
+def get_saglik_quotes():
+    """Web scraper ile sağlık sigortası tekliflerini çek"""
+    try:
+        data = request.json
+        health_data = {
+            "age": data.get("age", 30),
+            "gender": data.get("gender", "male"),
+            "smoking": data.get("smoking", False),
+            "chronic_disease": data.get("chronicDisease", False),
+            "coverage_type": data.get("coverageType", "comprehensive")
+        }
+        
+        # Async scraper çalıştır
+        async def run_scraper():
+            async with InsuranceScraper() as scraper:
+                quotes = await scraper._scrape_general_quotes(health_data, "saglik")
+                return quotes
+        
+        # Event loop oluştur ve çalıştır
+        loop = asyncio.new_event_loop()
+        asyncio.set_event_loop(loop)
+        quotes = loop.run_until_complete(run_scraper())
+        loop.close()
+        
+        # Sonuçları formatla
+        formatted_quotes = []
+        for quote in quotes:
+            formatted_quotes.append({
+                "company": quote.company,
+                "amount": quote.amount,
+                "currency": quote.currency,
+                "valid_until": quote.valid_until,
+                "coverage_details": quote.coverage_details,
+                "scraped_at": quote.scraped_at
+            })
+        
+        return jsonify({
+            "success": True,
+            "quotes": formatted_quotes,
+            "total_quotes": len(formatted_quotes),
+            "scraped_at": asyncio.get_event_loop().time() if asyncio.get_event_loop().is_running() else None
+        })
+        
+    except Exception as e:
+        return jsonify({
+            "success": False,
+            "error": str(e),
+            "message": "Sağlık teklifleri çekilirken hata oluştu"
+        }), 500
+
+@app.route("/api/scraper/all-quotes", methods=["POST"])
+def get_all_quotes():
+    """Web scraper ile tüm poliçe türlerinden teklifleri çek"""
+    try:
+        data = request.json
+        vehicle_data = {
+            "plaka": data.get("plaka", "34ABC123"),
+            "tescil_seri": data.get("tescilSeri", "A"),
+            "tescil_no": data.get("tescilNo", "123456"),
+            "model_year": data.get("modelYear", 2020),
+            "brand": data.get("brand", "Toyota"),
+            "model": data.get("model", "Corolla")
+        }
+        
+        policy_types = data.get("policy_types", ["trafik", "kasko", "konut", "saglik"])
+        
+        # Async scraper çalıştır
+        async def run_scraper():
+            async with InsuranceScraper() as scraper:
+                all_quotes = await scraper.scrape_all_quotes(vehicle_data, policy_types)
+                return all_quotes
+        
+        # Event loop oluştur ve çalıştır
+        loop = asyncio.new_event_loop()
+        asyncio.set_event_loop(loop)
+        all_quotes = loop.run_until_complete(run_scraper())
+        loop.close()
+        
+        # Sonuçları formatla
+        formatted_results = {}
+        total_quotes = 0
+        
+        for policy_type, quotes in all_quotes.items():
+            formatted_quotes = []
+            for quote in quotes:
+                formatted_quotes.append({
+                    "company": quote.company,
+                    "amount": quote.amount,
+                    "currency": quote.currency,
+                    "valid_until": quote.valid_until,
+                    "coverage_details": quote.coverage_details,
+                    "scraped_at": quote.scraped_at
+                })
+            
+            formatted_results[policy_type] = {
+                "quotes": formatted_quotes,
+                "count": len(formatted_quotes)
+            }
+            total_quotes += len(formatted_quotes)
+        
+        return jsonify({
+            "success": True,
+            "results": formatted_results,
+            "total_quotes": total_quotes,
+            "policy_types": policy_types,
+            "scraped_at": asyncio.get_event_loop().time() if asyncio.get_event_loop().is_running() else None
+        })
+        
+    except Exception as e:
+        return jsonify({
+            "success": False,
+            "error": str(e),
+            "message": "Teklifler çekilirken hata oluştu"
+        }), 500
 
 # ========== ADMIN & RAPORLAMA ==========
 
