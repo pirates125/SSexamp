@@ -4,6 +4,7 @@ from .base import BaseConnector
 from ..browser import browser_context
 from ..utils import parse_tl
 from playwright.async_api import TimeoutError as PWTimeout
+import pyotp
 
 class SompoConnector(BaseConnector):
     def __init__(self):
@@ -11,7 +12,7 @@ class SompoConnector(BaseConnector):
     
     async def fetch_quote(self, payload: Dict[str, Any]) -> dict:
         # Sompo Sigorta gerçek URL'leri
-        url = os.getenv("SOMPO_URL", "https://www.somposigorta.com.tr/agent/login")
+        url = os.getenv("SOMPO_URL", "https://ejento.somposigorta.com.tr/dashboard/login")
         user = os.getenv("SOMPO_USER", "")
         pwd  = os.getenv("SOMPO_PASS", "")
         proxy= os.getenv("HTTP_PROXY") or None
@@ -35,90 +36,78 @@ class SompoConnector(BaseConnector):
                 # Login formunu bul ve doldur
                 print("🔐 Login formu aranıyor...")
                 
-                # Farklı login selector'larını dene
-                login_selectors = [
-                    'input[name="username"]',
-                    'input[name="email"]', 
-                    'input[name="user"]',
-                    'input[type="email"]',
-                    '#username',
-                    '#email',
-                    '#user',
-                    '.username',
-                    '.email'
-                ]
+                # Sompo'nun gerçek login formu için selector'lar
+                await page.wait_for_selector('form', timeout=10000)
                 
-                username_filled = False
-                for selector in login_selectors:
-                    try:
-                        if await page.query_selector(selector):
-                            await page.fill(selector, user)
-                            print(f"✅ Username dolduruldu: {selector}")
-                            username_filled = True
-                            break
-                    except:
-                        continue
-                
-                if not username_filled:
+                # Username input'u bul ve doldur
+                username_input = await page.query_selector('input[type="text"], input[name="username"], input[name="email"]')
+                if username_input:
+                    await page.fill('input[type="text"], input[name="username"], input[name="email"]', user)
+                    print("✅ Username dolduruldu")
+                else:
                     print("❌ Username input bulunamadı")
-                    # Sayfa içeriğini yazdır
-                    content = await page.content()
-                    print("📄 Sayfa içeriği (ilk 500 karakter):")
-                    print(content[:500])
+                    raise RuntimeError("Sompo username input bulunamadı")
                 
-                # Password input'u bul
-                password_selectors = [
-                    'input[name="password"]',
-                    'input[type="password"]',
-                    '#password',
-                    '.password'
-                ]
-                
-                password_filled = False
-                for selector in password_selectors:
-                    try:
-                        if await page.query_selector(selector):
-                            await page.fill(selector, pwd)
-                            print(f"✅ Password dolduruldu: {selector}")
-                            password_filled = True
-                            break
-                    except:
-                        continue
-                
-                if not password_filled:
+                # Password input'u bul ve doldur
+                password_input = await page.query_selector('input[type="password"]')
+                if password_input:
+                    await page.fill('input[type="password"]', pwd)
+                    print("✅ Password dolduruldu")
+                else:
                     print("❌ Password input bulunamadı")
+                    raise RuntimeError("Sompo password input bulunamadı")
                 
-                # Submit butonunu bul ve tıkla
-                submit_selectors = [
-                    'button[type="submit"]',
-                    'input[type="submit"]',
-                    'button:has-text("Giriş")',
-                    'button:has-text("Login")',
-                    '.login-btn',
-                    '#login-btn'
-                ]
-                
-                submitted = False
-                for selector in submit_selectors:
-                    try:
-                        if await page.query_selector(selector):
-                            await page.click(selector)
-                            print(f"✅ Submit butonu tıklandı: {selector}")
-                            submitted = True
-                            break
-                    except:
-                        continue
-                
-                if not submitted:
-                    print("❌ Submit butonu bulunamadı")
+                # Login butonuna tıkla
+                login_button = await page.query_selector('button[type="submit"], button:has-text("Giriş"), button:has-text("Login")')
+                if login_button:
+                    await page.click('button[type="submit"], button:has-text("Giriş"), button:has-text("Login")')
+                    print("✅ Login butonu tıklandı")
+                else:
+                    print("❌ Login butonu bulunamadı")
+                    raise RuntimeError("Sompo login butonu bulunamadı")
                 
                 # Login sonrası bekle
-                await page.wait_for_load_state("networkidle", timeout=20000)
+                await page.wait_for_load_state("networkidle", timeout=15000)
                 print("✅ Login işlemi tamamlandı")
+                
+                # OTP ekranı kontrolü
+                current_url = page.url
+                print(f"📍 Mevcut URL: {current_url}")
+                
+                # OTP ekranı var mı kontrol et
+                otp_input = await page.query_selector('input[placeholder*="OTP"], input[placeholder*="Kod"], input[placeholder*="Doğrulama"]')
+                if otp_input:
+                    print("🔐 OTP ekranı bulundu")
+                    
+                    # Secret key'den OTP üret
+                    secret_key = os.getenv("SOMPO_SECRET_KEY", "")
+                    if secret_key:
+                        otp_code = pyotp.TOTP(secret_key).now()
+                        print(f"🔢 OTP kodu üretildi: {otp_code}")
+                        
+                        # OTP'yi gir
+                        await page.fill('input[placeholder*="OTP"], input[placeholder*="Kod"], input[placeholder*="Doğrulama"]', otp_code)
+                        print("✅ OTP kodu girildi")
+                        
+                        # OTP submit butonuna tıkla
+                        otp_submit = await page.query_selector('button[type="submit"], button:has-text("Doğrula"), button:has-text("Onayla")')
+                        if otp_submit:
+                            await page.click('button[type="submit"], button:has-text("Doğrula"), button:has-text("Onayla")')
+                            print("✅ OTP doğrulama butonu tıklandı")
+                            
+                            # OTP sonrası bekle
+                            await page.wait_for_load_state("networkidle", timeout=15000)
+                            print("✅ OTP doğrulama tamamlandı")
+                        else:
+                            print("⚠️ OTP submit butonu bulunamadı, manuel onay bekleniyor")
+                    else:
+                        print("⚠️ SOMPO_SECRET_KEY bulunamadı, manuel OTP girişi gerekli")
+                        # Manuel OTP girişi için bekle
+                        await page.wait_for_timeout(30000)  # 30 saniye bekle
                 
                 # Başarılı login kontrolü
                 current_url = page.url
-                print(f"📍 Mevcut URL: {current_url}")
+                print(f"📍 Final URL: {current_url}")
                 
                 # Eğer hala login sayfasındaysak, hata var
                 if "login" in current_url.lower():
